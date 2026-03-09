@@ -86,7 +86,7 @@ The `ar0822` overlay supports comma-separated options to override defaults:
 | option | description | default |
 |--------|-------------|----------|
 | `cam0` | Use cam0 port instead of cam1 | cam1 |
-| `4lane` | Enable 4-lane MIPI CSI support | 2-lane |
+| `4lane` | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
 
 ### cam0
 
