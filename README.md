@@ -211,7 +211,7 @@ meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabl
 
 Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60**, causing build errors like "libavcodec API version is too old" (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
 
-- **Keep libav, lose eHDR** — check out `rpicam-apps` **v1.9.0** before running `meson setup` (v1.9.0 predates the eHDR patches, so eHDR will **not** be available):
+- **Keep libav, without eHDR** — check out `rpicam-apps` **v1.9.0** before running `meson setup` (v1.9.0 predates the eHDR patches, so eHDR will **not** be available):
   ```bash
   git checkout v1.9.0
   ```
