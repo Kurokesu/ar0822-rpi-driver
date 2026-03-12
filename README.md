@@ -1,10 +1,10 @@
-# Kernel Driver for AR0822
+# Kernel driver for AR0822
 
 [![code formatting](https://github.com/Kurokesu/ar0822-v4l2-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0822-v4l2-driver/actions/workflows/clang-format.yml)
 [![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
 [![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
 
-Raspberry Pi kernel driver for the Onsemi AR0822 — an 8MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
+Raspberry Pi kernel driver for Onsemi AR0822 — an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
 
 - 2-lane and 4-lane MIPI CSI-2 (up to 960 Mbps/lane)
 - 10-bit and 12-bit RAW output
@@ -14,26 +14,21 @@ Raspberry Pi kernel driver for the Onsemi AR0822 — an 8MP rolling shutter 1/1.
 > [!NOTE]
 > This driver supports an experimental eHDR mode, modeled after the IMX708
 > implementation, by exposing the standard `V4L2_CID_WIDE_DYNAMIC_RANGE` control.
-> Read more about it in [eHDR (experimental)](#ehdr-experimental).
+> Read more in [eHDR (experimental)](#ehdr-experimental).
 
-## Prerequisites
+## Setup
 
-**Kernel version**: You should be running on a Linux kernel version 6.1 or newer. You can verify your kernel version by executing `uname -r` in your terminal.
-   
-## Installation Steps
+> [!NOTE]
+> Requires Linux kernel 6.1 or newer. Verify with `uname -r`.
 
-### Development Tools
-
-Required tools: `git`, `dkms`. If not already installed, install with:
+Install required tools:
 
 ```bash
 sudo apt install -y git
 sudo apt install -y --no-install-recommends dkms
 ```
 
-### Fetching the Source Code
-
-Clone the repository to your local machine and navigate to the cloned directory:
+Clone this repository:
 
 ```bash
 cd ~
@@ -41,17 +36,13 @@ git clone https://github.com/Kurokesu/ar0822-v4l2-driver.git
 cd ar0822-v4l2-driver/
 ```
 
-### Compiling and Installing the Kernel Driver
-
-To compile and install the kernel driver, execute the provided installation script:
+Run setup script:
 
 ```bash
 sudo ./setup.sh
 ```
 
-### Updating the Boot Configuration
-
-Edit the boot configuration file using the following command:
+Edit boot configuration:
 
 ```bash
 sudo nano /boot/firmware/config.txt
@@ -72,25 +63,23 @@ camera_auto_detect=0
 dtoverlay=ar0822
 ```
 
-Save the file and exit the editor.
-
-Remember to reboot your system for the changes to take effect after editing `config.txt`.
+Save and exit. Reboot for changes to take effect.
 
 > [!IMPORTANT]
-> The stock `libcamera` does not support the AR0822 sensor — you must build a patched version for the camera to function properly. See [libcamera](#libcamera) below.
+> Stock `libcamera` does not support AR0822 — you must build a patched version for camera to function. See [Build libcamera](#build-libcamera) below.
 
 ## dtoverlay options
 
-The `ar0822` overlay supports comma-separated options to override defaults:
+`ar0822` overlay supports comma-separated options to override defaults:
 
 | option | description | default |
 |--------|-------------|----------|
 | `cam0` | Use cam0 port instead of cam1 | cam1 |
-| `4lane` | Enable 4-lane MIPI CSI support | 2-lane |
+| `4lane` | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
 
 ### cam0
 
-If the camera is connected to the cam0 port, append `,cam0`:
+If camera is connected to cam0 port, append `,cam0`:
 
 ```ini
 dtoverlay=ar0822,cam0
@@ -105,30 +94,29 @@ dtoverlay=ar0822,4lane
 ```
 
 > [!WARNING]
-> Before using `4lane`, confirm your camera port actually supports 4 lanes. Not all Raspberry Pi models and carrier boards provide 4-lane CSI on both ports.
-
+> Before using `4lane`, confirm your camera port actually supports 4-lane MIPI CSI. Not all Raspberry Pi models and carrier boards provide 4-lane MIPI CSI on both ports.
 
 > [!TIP]
-> You can combine options. Example `cam0 + 4 lanes`:
+> Options can be combined. Example — cam0, 4-lane:
 > ```ini
 > dtoverlay=ar0822,cam0,4lane
 > ```
 
-## libcamera
+## Build libcamera
 
-Currently, the main `libcamera` repository does not support the `ar0822` sensor. To enable support, a fork has been created with the necessary modifications.
+Main `libcamera` repository does not support AR0822. A fork with necessary modifications is available.
 
-On Raspberry Pi devices, `libcamera` and `rpicam-apps` must be rebuilt together. Detailed instructions can be found [here](https://www.raspberrypi.com/documentation/computers/camera_software.html#advanced-rpicam-apps), but for convenience, this is the shorter version:
+On Raspberry Pi, `libcamera` and `rpicam-apps` must be rebuilt together. Detailed instructions are available [here](https://www.raspberrypi.com/documentation/computers/camera_software.html#advanced-rpicam-apps), but for convenience, here is a shorter version.
 
-### Build libcamera and rpicam-apps
-
-#### Remove Pre-installed rpicam-apps
+Remove pre-installed `rpicam-apps`:
 
 ```bash
 sudo apt remove --purge rpicam-apps
 ```
 
-#### Install libcamera Dependencies
+### libcamera
+
+Install dependencies:
 
 ```bash
 sudo apt install -y libboost-dev
@@ -139,9 +127,7 @@ sudo apt install -y python3-yaml python3-ply
 sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 ```
 
-#### Clone the Forked libcamera Repository
-
-Clone Kurokesu's fork of `libcamera` with `ar0822` modifications:
+Clone Kurokesu's `libcamera` fork with AR0822 support:
 
 ```bash
 cd ~
@@ -149,35 +135,33 @@ git clone https://github.com/Kurokesu/libcamera.git --branch ar0822
 cd libcamera/
 ```
 
-#### Configure the Build Environment
-
-Run `meson` to configure the build environment:
+Configure with `meson`:
 
 ```bash
 meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
 ```
 
-#### Build and Install libcamera
-
-Build `libcamera`:
+Build:
 
 ```bash
 ninja -C build
 ```
 
-Then install it:
+Install:
 
 ```bash
 sudo ninja -C build install
 ```
 
 > [!TIP]
-> On devices with 1GB of memory or less, the build may exceed available memory. Append the `-j 1` flag to meson commands to limit the build to a single process.
+> On devices with 1 GB of memory or less, build may exceed available memory. Append `-j 1` to limit to a single process.
 
 > [!WARNING]
-> `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
+> `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after building `libcamera`.
 
-#### Install rpicam-apps Dependencies
+### rpicam-apps
+
+Install dependencies:
 
 ```bash
 sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
@@ -185,9 +169,7 @@ sudo apt install -y libavcodec-dev libavdevice-dev libavformat-dev libswresample
 sudo apt install -y libepoxy-dev libpng-dev
 ```
 
-#### Clone the rpicam-apps Repository
-
-Clone Kurokesu’s `rpicam-apps` fork, which contains HDR modifications:
+Clone Kurokesu's `rpicam-apps` fork with HDR modifications:
 
 ```bash
 cd ~
@@ -195,67 +177,59 @@ git clone https://github.com/Kurokesu/rpicam-apps.git --branch hdr-ar0822
 cd rpicam-apps
 ```
 
-#### Configure the rpicam-apps Build
-
-Run the following `meson` command to configure the build (libav enabled by default):
+Configure with `meson` (libav enabled by default):
 
 ```bash
 meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
 ```
 
 > [!IMPORTANT]
-> `-Denable_libav` enables optional video encode/decode support (FFmpeg / `libavcodec`).
-> 
-> - **Debian Bookworm**: the packaged `libav*` version is **too old** to build `rpicam-apps` releases **newer than v1.9.0** with libav enabled.
->   - On Bookworm this typically shows up as build errors like “libavcodec API version is too old”, because Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60** (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
->   - If you want libav support on Bookworm, clone the **upstream** `rpicam-apps` and check out **v1.9.0** instead of the Kurokesu fork:
-> 
->     ```bash
->     cd ~
->     git clone https://github.com/raspberrypi/rpicam-apps.git
->     cd rpicam-apps
->     git checkout v1.9.0
->     ```
->     **Note:** this uses the upstream repository, so eHDR support will **not** be available in this configuration.
->   - If you want eHDR support on Bookworm (using the Kurokesu fork), you must disable libav:
->
->     ```bash
->     meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
->     ```
-> - **Debian Trixie**: build `rpicam-apps` as usual with `-Denable_libav=enabled` (the Kurokesu fork supports both libav and eHDR).
+> On Raspberry Pi OS **Bookworm**, packaged `libav*` is **too old** for `rpicam-apps` newer than v1.9.0.
 
-#### Build rpicam-apps
+<details>
+<summary>Bookworm libav workaround</summary>
 
-Run the following command to build:
+Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60**, causing build errors like "libavcodec API version is too old" (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
+
+- **Keep libav, without eHDR** — check out `rpicam-apps` **v1.9.0** before running `meson setup` (v1.9.0 predates eHDR patches, so eHDR will **not** be available):
+  ```bash
+  git checkout v1.9.0
+  ```
+- **Keep eHDR, disable libav** — stay on `hdr-ar0822` branch and disable libav:
+  ```bash
+  meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
+  ```
+
+</details>
+
+Build:
 
 ```bash
 meson compile -C build
 ```
 
-#### Install rpicam-apps
-
-Run the following command to install `rpicam-apps`:
+Install:
 
 ```bash
 sudo meson install -C build
 ```
 
-> [!TIP]  
-> The command above should automatically update the `ldconfig` cache. If you have trouble accessing your new `rpicam-apps` build, run the following command to update the cache:
-> 
+> [!TIP]
+> This should automatically update `ldconfig` cache. If you have trouble accessing your new build, update manually:
+>
 > ```bash
 > sudo ldconfig
 > ```
 
-#### Verify the rpicam-apps Build
+### Verify rpicam-apps build
 
-Verify that `rpicam-apps` was rebuilt correctly by checking the version:
+Verify `rpicam-apps` was rebuilt correctly:
 
 ```bash
 rpicam-hello --version
 ```
 
-You should get output similar to this, with your build date:
+Expected output (build date will differ):
 
 ```
 rpicam-apps build: v1.11.1 d2836f37957f 25-02-2026 (14:43:27)
@@ -271,13 +245,13 @@ Do not forget to reboot!
 sudo reboot
 ```
 
-Run the following command to list available cameras:
+List available cameras:
 
 ```bash
 rpicam-hello --list-cameras
 ```
 
-You should see output similar to this (depending on your link-frequency and lane count):
+Expected output (varies by link frequency and lane configuration):
 
 ```
 Available cameras
@@ -291,22 +265,20 @@ Available cameras
 
 ## eHDR (experimental)
 
-AR0822 features an on‑sensor HDR mode that expands dynamic range up to 120 dB by combining three exposures within the sensor using the MEC algorithm. To reduce bandwidth requirements even further, the linearized 20‑bit HDR signal is companded to a 12‑bit output.
+AR0822 features an on‑sensor HDR mode that expands dynamic range up to 120 dB by combining three exposures within sensor using the MEC algorithm. To reduce bandwidth requirements, linearized 20‑bit HDR signal is companded to a 12‑bit output.
 
-> [!IMPORTANT] 
-> libcamera pipeline is designed to work with linear image data from sensor,
-> so while Kurokesu's libcamera fork HDR implementation is in experimental
-> stage, companded data may have some color shifts due to compression.
+> [!IMPORTANT]
+> libcamera pipeline is designed for linear image data from sensor. While Kurokesu's fork HDR implementation is experimental, companded data may show color shifts due to compression.
 
-Because of the way exposure range limitations work in sensor, running at maximum FPS with current PIXCLK configuration will reduce maximum exposure drastically.
+Due to exposure range limitations, running at maximum fps with current PIXCLK configuration reduces maximum exposure drastically.
 
-For instance, running 4k @ 30fps results in maximum exposure T1 ≈ 10.26ms, while running 4k @ 28.8fps results in T1 ≈ 30.4ms (right at the internal delay buffer limit).
+For instance, running 4K @ 30 fps results in maximum exposure T1 ≈ 10.26 ms, while running 4K @ 28.8 fps results in T1 ≈ 30.4 ms (right at internal delay buffer limit).
 
-Consider reducing framerate slightly when larger exposure range is desired, this will be addressed in future revisions of the driver.
+Consider reducing framerate slightly when larger exposure range is desired. This will be addressed in future driver revisions.
 
 eHDR mode is enabled by appending `--hdr` to `rpicam` commands.
 
-### List supported eHDR mode formats
+### List eHDR modes
 
 ```bash
 rpicam-hello --list-cameras --hdr
@@ -320,9 +292,7 @@ Available cameras
                              3840x2160 [30.01 fps - (0, 0)/3840x2160 crop]
 ```
 
-## Special Thanks
+## Special thanks
 
-Special thanks to:
-
-- [Will Whang](https://github.com/will127534) for [imx585-v4l2-driver](https://github.com/will127534/imx585-v4l2-driver) repository which was used as the basis for structuring this driver.
-- Sasha Shturma's Raspberry Pi CM4 carrier with Hi-Res MIPI Display project. The install script is adapted from [cm4-panel-jdi-lt070me05000](https://github.com/renetec-io/cm4-panel-jdi-lt070me05000).
+- [Will Whang](https://github.com/will127534) for [imx585-v4l2-driver](https://github.com/will127534/imx585-v4l2-driver), used as basis for structuring this driver.
+- Sasha Shturma's Raspberry Pi CM4 carrier with Hi-Res MIPI Display project. Install script adapted from [cm4-panel-jdi-lt070me05000](https://github.com/renetec-io/cm4-panel-jdi-lt070me05000).
