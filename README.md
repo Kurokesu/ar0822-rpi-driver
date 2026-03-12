@@ -16,32 +16,31 @@ Raspberry Pi kernel driver for Onsemi AR0822 — an 8 MP rolling shutter 1/1.8" 
 > implementation, by exposing the standard `V4L2_CID_WIDE_DYNAMIC_RANGE` control.
 > Read more in [eHDR (experimental)](#ehdr-experimental).
 
-## Installation
+## Setup
 
 > [!NOTE]
 > Requires Linux kernel 6.1 or newer. Verify with `uname -r`.
 
-### Development tools
-
-Required tools: `git`, `dkms`. If not already installed, install with:
+Install required tools:
 
 ```bash
 sudo apt install -y git
 sudo apt install -y --no-install-recommends dkms
 ```
 
-### Build and install
-
-Clone this repository and run the setup script:
+Clone this repository:
 
 ```bash
 cd ~
 git clone https://github.com/Kurokesu/ar0822-v4l2-driver.git
 cd ar0822-v4l2-driver/
-sudo ./setup.sh
 ```
 
-### Boot configuration
+Run setup script:
+
+```bash
+sudo ./setup.sh
+```
 
 Edit boot configuration:
 
@@ -67,7 +66,7 @@ dtoverlay=ar0822
 Save and exit. Reboot for changes to take effect.
 
 > [!IMPORTANT]
-> Stock `libcamera` does not support AR0822 — you must build a patched version for camera to function. See [libcamera](#libcamera) below.
+> Stock `libcamera` does not support AR0822 — you must build a patched version for camera to function. See [Build libcamera](#build-libcamera) below.
 
 ## dtoverlay options
 
@@ -103,21 +102,21 @@ dtoverlay=ar0822,4lane
 > dtoverlay=ar0822,cam0,4lane
 > ```
 
-## libcamera
+## Build libcamera
 
 Main `libcamera` repository does not support AR0822. A fork with necessary modifications is available.
 
-On Raspberry Pi, `libcamera` and `rpicam-apps` must be rebuilt together. Detailed instructions are available [here](https://www.raspberrypi.com/documentation/computers/camera_software.html#advanced-rpicam-apps), but for convenience, here is a shorter version:
+On Raspberry Pi, `libcamera` and `rpicam-apps` must be rebuilt together. Detailed instructions are available [here](https://www.raspberrypi.com/documentation/computers/camera_software.html#advanced-rpicam-apps), but for convenience, here is a shorter version.
 
-### Build libcamera and rpicam-apps
-
-#### Remove pre-installed rpicam-apps
+Remove pre-installed `rpicam-apps`:
 
 ```bash
 sudo apt remove --purge rpicam-apps
 ```
 
-#### Install libcamera dependencies
+### libcamera
+
+Install dependencies:
 
 ```bash
 sudo apt install -y libboost-dev
@@ -128,8 +127,6 @@ sudo apt install -y python3-yaml python3-ply
 sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 ```
 
-#### Clone libcamera fork
-
 Clone Kurokesu's `libcamera` fork with AR0822 support:
 
 ```bash
@@ -138,15 +135,11 @@ git clone https://github.com/Kurokesu/libcamera.git --branch ar0822
 cd libcamera/
 ```
 
-#### Configure build environment
-
 Configure with `meson`:
 
 ```bash
 meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
 ```
-
-#### Build and install libcamera
 
 Build:
 
@@ -166,15 +159,15 @@ sudo ninja -C build install
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after building `libcamera`.
 
-#### Install rpicam-apps dependencies
+### rpicam-apps
+
+Install dependencies:
 
 ```bash
 sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
 sudo apt install -y libavcodec-dev libavdevice-dev libavformat-dev libswresample-dev
 sudo apt install -y libepoxy-dev libpng-dev
 ```
-
-#### Clone rpicam-apps
 
 Clone Kurokesu's `rpicam-apps` fork with HDR modifications:
 
@@ -183,8 +176,6 @@ cd ~
 git clone https://github.com/Kurokesu/rpicam-apps.git --branch hdr-ar0822
 cd rpicam-apps
 ```
-
-#### Configure rpicam-apps build
 
 Configure with `meson` (libav enabled by default):
 
@@ -211,15 +202,11 @@ Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavco
 
 </details>
 
-#### Build rpicam-apps
-
 Build:
 
 ```bash
 meson compile -C build
 ```
-
-#### Install rpicam-apps
 
 Install:
 
@@ -234,7 +221,7 @@ sudo meson install -C build
 > sudo ldconfig
 > ```
 
-#### Verify rpicam-apps build
+### Verify rpicam-apps build
 
 Verify `rpicam-apps` was rebuilt correctly:
 
