@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/pkg-info.mk
+
+DKMS_DEST = usr/src/ar0822-rpi-dkms-$(DEB_VERSION_UPSTREAM)
+
+%:
+	dh $@ --with dkms
+
+# The module and overlay are built on target by DKMS at install time,
+# not during packaging. Skipping the upstream build keeps the package
+# buildable in a container that has no kernel headers.
+override_dh_auto_build:
+
+# dh_dkms installs only dkms.conf. The module sources have to ship
+# alongside it in the versioned DKMS source tree.
+override_dh_install:
+	dh_install ar0822.c ar0822-overlay.dts Makefile dkms.postinst $(DKMS_DEST)

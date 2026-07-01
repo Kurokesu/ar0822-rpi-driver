@@ -1,0 +1,5 @@
+ar0822-rpi-dkms (0.1.0-1) unstable; urgency=medium
+
+  * Initial release as a DKMS source package.
+
+ -- Kurokesu <info@kurokesu.com>  Wed, 01 Jul 2026 21:38:23 +0300

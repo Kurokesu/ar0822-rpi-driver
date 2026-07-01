@@ -1,0 +1,57 @@
+Packaging layout and release procedure
+=======================================
+
+This is the packaging branch for ar0822-rpi-dkms, kept separate from the
+driver source under the DEP-14 layout:
+
+  * main           - driver source (ar0822.c, Makefile, overlay, dkms.conf,
+                     setup.sh). Tagged v<upstream> per release.
+  * debian/latest  - this branch: debian/ recipe only, no source. Tagged
+                     debian/<upstream>-<revision> per packaging release.
+
+The two branches never share files. The release build fetches the source
+from the v<upstream> tag and lays this debian/ recipe over it.
+
+Releasing
+---------
+
+A release is a pair of tags. The source tag must exist before the packaging
+tag is pushed, or .github/workflows/release.yml fails in preflight.
+
+  1. Source (on main), once per upstream version:
+
+       git checkout main
+       git tag -a v0.1.0 -m "ar0822-rpi-dkms 0.1.0"
+       git push origin v0.1.0
+
+  2. Packaging (on debian/latest), once per revision. Ensure
+     debian/changelog's top entry matches, then:
+
+       git checkout debian/latest
+       git tag -a debian/0.1.0-1 -m "ar0822-rpi-dkms 0.1.0-1"
+       git push origin debian/0.1.0-1
+
+Pushing the debian/** tag triggers release.yml, which:
+
+  * preflight - parses debian/<upstream>-<rev>, derives v<upstream>, verifies
+    the source tag exists and matches debian/changelog.
+  * build     - git archive v<upstream> -> orig tarball, overlays debian/,
+    dpkg-buildpackage -us -uc (arch:all .deb + full source package).
+  * sign      - bundles .deb/.changes/.buildinfo, signs SHA256SUMS with the
+    archive key, self-verifies against .github/keys/kurokesu-archive-keyring.gpg.
+  * publish   - creates the GitHub pre-release on the v<upstream> tag.
+
+A packaging-only rebuild (0.1.0-1 -> 0.1.0-2) adds a debian/changelog entry
+and a new debian/0.1.0-2 tag; the source tag v0.1.0 is reused, not retagged.
+
+Migrating from a setup.sh install
+---------------------------------
+
+If the module was previously installed by the repository's setup.sh, DKMS
+owns the module tree under the same package name and the first package
+install collides. Remove the hand-built module once:
+
+  sudo dkms remove ar0822-rpi-dkms/<old-version> --all
+  sudo dpkg --configure -a   # if a package install was interrupted
+
+Subsequent package upgrades need no manual steps.

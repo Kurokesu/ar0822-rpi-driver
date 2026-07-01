@@ -1,0 +1,286 @@
+name: Release
+
+# Publish on a debian/<full-version> tag push. Paired-tag procedure:
+# tag the source on main as v<upstream> first, then tag the packaging on
+# debian/latest as debian/<upstream>-<rev> to trigger this workflow.
+# See debian/source/README.source for the full release procedure.
+
+on:
+  push:
+    tags: ['debian/**']
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Verify paired source tag
+    runs-on: ubuntu-latest
+    outputs:
+      packaging-version: ${{ steps.parse.outputs.packaging }}
+      upstream-version: ${{ steps.parse.outputs.upstream }}
+      upstream-ref: ${{ steps.parse.outputs.ref }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Parse packaging tag
+        id: parse
+        run: |
+          set -euo pipefail
+          PACKAGING="${GITHUB_REF#refs/tags/debian/}"
+          UPSTREAM="${PACKAGING%-*}"
+          UPSTREAM_REF="v${UPSTREAM}"
+          echo "packaging=${PACKAGING}" >> "$GITHUB_OUTPUT"
+          echo "upstream=${UPSTREAM}"   >> "$GITHUB_OUTPUT"
+          echo "ref=${UPSTREAM_REF}"    >> "$GITHUB_OUTPUT"
+          echo "Packaging tag : debian/${PACKAGING}"
+          echo "Upstream ref  : ${UPSTREAM_REF}"
+
+      - name: Verify source tag exists (fail fast)
+        run: |
+          set -euo pipefail
+          REF="${{ steps.parse.outputs.ref }}"
+          if ! git rev-parse "refs/tags/${REF}" >/dev/null 2>&1; then
+            echo "::error::Source tag '${REF}' does not exist on this repo."
+            echo "::error::Tag the source on main with this revision-less name,"
+            echo "::error::push it, then re-push the packaging tag to trigger this workflow."
+            exit 1
+          fi
+          echo "OK: source tag ${REF} -> $(git rev-parse "refs/tags/${REF}")"
+
+      - name: Verify tag matches debian/changelog
+        # Guards hand-made tags. The checkout on a tag push is the tagged commit.
+        run: |
+          set -euo pipefail
+          command -v dpkg-parsechangelog >/dev/null \
+            || sudo apt-get install -y --no-install-recommends dpkg-dev
+          CHANGELOG=$(dpkg-parsechangelog -SVersion)
+          # The packaging tag is epoch-free (colons are illegal in git refs),
+          # so compare against the changelog version with any epoch stripped.
+          CHANGELOG_TAG=${CHANGELOG#*:}
+          TAG="${{ steps.parse.outputs.packaging }}"
+          if [ "${CHANGELOG_TAG}" != "${TAG}" ]; then
+            echo "::error::Packaging tag says '${TAG}' but debian/changelog at the tagged commit says '${CHANGELOG}'."
+            echo "::error::Retag the commit with a matching changelog."
+            exit 1
+          fi
+          echo "OK: tag matches changelog (${CHANGELOG})"
+
+  build:
+    needs: preflight
+    name: Build source package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout packaging (debian/latest)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          path: recipe
+
+      - name: Checkout source at paired tag
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.upstream-ref }}
+          path: upstream
+
+      - name: Build source + binary package in a clean Debian trixie container
+        env:
+          PKG: ar0822-rpi-dkms
+          UPSTREAM: ${{ needs.preflight.outputs.upstream-version }}
+        run: |
+          set -euo pipefail
+          docker run --rm -e PKG -e UPSTREAM \
+            -v "$PWD":/w -w /w \
+            debian:trixie bash -euo pipefail -c '
+              apt-get update -qq
+              apt-get install -y --no-install-recommends \
+                build-essential debhelper dh-dkms dpkg-dev devscripts \
+                git ca-certificates
+              git config --global --add safe.directory /w/upstream
+
+              # A pristine orig tarball straight from the paired source tag,
+              # so the source package matches the tagged commit exactly.
+              cd upstream
+              git archive --format=tar --prefix="${PKG}-${UPSTREAM}/" HEAD \
+                | gzip -n > "/w/${PKG}_${UPSTREAM}.orig.tar.gz"
+
+              # Lay the debian/ recipe over the extracted source and build the
+              # full source package plus the arch:all .deb. No -b: the module
+              # and overlay are still compiled on target by DKMS, not here.
+              cd /w
+              tar xf "${PKG}_${UPSTREAM}.orig.tar.gz"
+              cp -r recipe/debian "${PKG}-${UPSTREAM}/"
+              cd "${PKG}-${UPSTREAM}"
+              dpkg-buildpackage -us -uc
+            '
+          echo "=== build products ==="
+          ls -la ./*.deb ./*.dsc ./*.changes ./*.buildinfo \
+            ./*.orig.tar.* ./*.debian.tar.*
+
+      - name: Upload .deb set + source package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.PKG }}_${{ needs.preflight.outputs.packaging-version }}
+          path: |
+            ./*.deb
+            ./*.dsc
+            ./*.changes
+            ./*.buildinfo
+            ./*.orig.tar.*
+            ./*.debian.tar.*
+          if-no-files-found: error
+          retention-days: 30
+        env:
+          PKG: ar0822-rpi-dkms
+
+  sign:
+    needs: [preflight, build]
+    name: Bundle and sign
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/keys
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts/
+
+      - name: Bundle assets
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p release-assets
+          for dir in artifacts/*/; do
+            name=$(basename "$dir")
+            ( cd "$dir"
+              files=( *.deb *.changes *.buildinfo )
+              keep=()
+              for f in "${files[@]}"; do
+                [[ $f == *dbgsym* ]] || keep+=("$f")
+              done
+              [ "${#keep[@]}" -gt 0 ] \
+                || { echo "::error::Nothing to bundle for ${name}."; exit 1; }
+              tar -czf "${GITHUB_WORKSPACE}/release-assets/${name}.tar.gz" \
+                -- "${keep[@]}"
+            )
+          done
+          cd release-assets
+          # Guard the glob: unmatched would make sha256sum read stdin.
+          tarballs=( *.tar.gz )
+          [ "${#tarballs[@]}" -gt 0 ] \
+            || { echo "::error::No tarballs produced."; exit 1; }
+          sha256sum -- "${tarballs[@]}" > SHA256SUMS
+          ls -la
+
+      - name: Sign SHA256SUMS
+        env:
+          ARCHIVE_GPG_SIGNING_KEY: ${{ secrets.ARCHIVE_GPG_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          GNUPGHOME=$(mktemp -d); export GNUPGHOME
+          trap 'gpgconf --kill all 2>/dev/null || true; rm -rf "$GNUPGHOME"' EXIT
+
+          # || true: an empty/garbage secret falls through to the
+          # actionable assertion below instead of a bare gpg error.
+          printf '%s' "$ARCHIVE_GPG_SIGNING_KEY" \
+            | gpg --batch --quiet --no-greeting --import || true
+
+          # || KEYIDS="" keeps the error below reachable under pipefail
+          # when the import yielded no secret keys.
+          KEYIDS=$(gpg --list-secret-keys --with-colons 2>/dev/null \
+            | awk -F: '$1=="ssb" && $12~/s/ {print $5}') || KEYIDS=""
+          [ -n "$KEYIDS" ] && [ "$(printf '%s\n' "$KEYIDS" | wc -l)" -eq 1 ] \
+            || { echo "::error::Expected exactly one signing subkey; found: ${KEYIDS:-none}."; exit 1; }
+
+          cd release-assets
+          gpg --batch --yes --quiet --pinentry-mode loopback \
+            --no-auto-key-locate --keyserver-options no-auto-key-retrieve \
+            --local-user "$KEYIDS" \
+            --detach-sign --armor SHA256SUMS
+
+          # Independent check that the published keyring validates the signature.
+          gpgv --keyring "${GITHUB_WORKSPACE}/.github/keys/kurokesu-archive-keyring.gpg" \
+            SHA256SUMS.asc SHA256SUMS
+
+      - name: Upload signed release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [preflight, sign]
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets
+          path: release-assets/
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.preflight.outputs.upstream-ref }}"
+          PKG_REV="${{ needs.preflight.outputs.packaging-version }}"
+          UPSTREAM="${{ needs.preflight.outputs.upstream-version }}"
+
+          # Re-run on an existing release refreshes its assets, leaving title,
+          # notes and the Pre-release flag intact. Clear the assets first then
+          # re-upload so a packaging rebuild (-1 -> -2) cannot leave the old
+          # revision's tarballs beside the new SHA256SUMS.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name' \
+              | xargs -r -I{} gh release delete-asset "$TAG" {} --yes --repo "$GITHUB_REPOSITORY"
+            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --clobber release-assets/*
+            exit 0
+          fi
+
+          # Skeleton notes for manual fill-in before promoting
+          # from Pre-release to Latest.
+          NOTES=$(cat <<EOF
+          DKMS package for the Onsemi AR0822 camera driver on Raspberry Pi.
+
+          ### Hardware validated
+
+
+          ### Install
+
+          \`\`\`
+          sudo apt install ./ar0822-rpi-dkms_${UPSTREAM}-*_all.deb
+          \`\`\`
+
+          Migrating from a \`setup.sh\` install? Remove the hand-built module once
+          before the first package install:
+
+          \`\`\`
+          sudo dkms remove ar0822-rpi-dkms/<old-version> --all
+          \`\`\`
+
+          Verify integrity with the signed \`SHA256SUMS.asc\` against the Kurokesu
+          archive key.
+
+          Packaging revision: \`${PKG_REV}\`
+          EOF
+          )
+
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --prerelease \
+            --notes "$NOTES" \
+            release-assets/*
