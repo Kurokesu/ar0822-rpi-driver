@@ -33,10 +33,10 @@ if ! command -v dkms >/dev/null 2>&1; then
 	exit 1
 fi
 
-LEGACY_NAME=$(echo "$PACKAGE_NAME" | sed 's/-rpi-/-/')
+SENSOR=${PACKAGE_NAME%-rpi-dkms}
 NAMES="$PACKAGE_NAME"
-if [ "$LEGACY_NAME" != "$PACKAGE_NAME" ]; then
-	NAMES="$NAMES $LEGACY_NAME"
+if [ "$SENSOR" != "$PACKAGE_NAME" ]; then
+	NAMES="$NAMES ${SENSOR}-dkms ${SENSOR}"
 fi
 
 for name in $NAMES; do
