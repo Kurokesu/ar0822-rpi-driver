@@ -2,6 +2,7 @@
 
 include /usr/share/dpkg/pkg-info.mk
 
+DKMS_VERSION := $(shell sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' dkms.conf)
 DKMS_DEST = usr/src/ar0822-rpi-dkms-$(DEB_VERSION_UPSTREAM)
 
 %:
@@ -12,7 +13,9 @@ DKMS_DEST = usr/src/ar0822-rpi-dkms-$(DEB_VERSION_UPSTREAM)
 # buildable in a container that has no kernel headers.
 override_dh_auto_build:
 
-# dh_dkms installs only dkms.conf. The module sources have to ship
-# alongside it in the versioned DKMS source tree.
+# dkms.conf and the sources must land in the same versioned tree, so the
+# dkms.conf and changelog versions have to match. Assert before shipping.
 override_dh_install:
+	test "$(DKMS_VERSION)" = "$(DEB_VERSION_UPSTREAM)" \
+		|| { echo "ERROR: dkms.conf PACKAGE_VERSION ($(DKMS_VERSION)) != changelog upstream ($(DEB_VERSION_UPSTREAM)). Bump dkms.conf on main to match debian/changelog." >&2; exit 1; }
 	dh_install ar0822.c ar0822-overlay.dts Makefile dkms.postinst $(DKMS_DEST)
