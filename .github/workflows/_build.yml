@@ -1,0 +1,102 @@
+name: Build .deb (reusable)
+
+# Builds the arch:all DKMS source package in a clean Debian trixie
+# container.
+
+on:
+  workflow_call:
+    inputs:
+      source-repo:
+        description: owner/repo to fetch the driver source from
+        type: string
+        required: true
+      upstream-ref:
+        description: Git ref for the driver source checkout (branch or tag)
+        type: string
+        required: true
+      package-name:
+        description: Source package name, used for orig tarball and artifact naming
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build source package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout packaging recipe (debian/)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          path: recipe
+
+      - name: Checkout driver source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          repository: ${{ inputs.source-repo }}
+          ref: ${{ inputs.upstream-ref }}
+          path: upstream
+
+      - name: Compute versions from changelog
+        id: version
+        run: |
+          set -euo pipefail
+          command -v dpkg-parsechangelog >/dev/null \
+            || sudo apt-get install -y --no-install-recommends dpkg-dev
+          PACKAGING=$(dpkg-parsechangelog -l recipe/debian/changelog -SVersion)
+          UPSTREAM=${PACKAGING%-*}
+          echo "packaging=${PACKAGING}" >> "$GITHUB_OUTPUT"
+          echo "upstream=${UPSTREAM}"   >> "$GITHUB_OUTPUT"
+          echo "Packaging version: ${PACKAGING}"
+          echo "Upstream version:  ${UPSTREAM}"
+
+      - name: Build source + binary package in a clean Debian trixie container
+        env:
+          PKG: ${{ inputs.package-name }}
+          UPSTREAM: ${{ steps.version.outputs.upstream }}
+        run: |
+          set -euo pipefail
+          docker run --rm -e PKG -e UPSTREAM \
+            -v "$PWD":/w -w /w \
+            debian:trixie bash -euo pipefail -c '
+              apt-get update -qq
+              apt-get install -y --no-install-recommends \
+                build-essential debhelper dh-dkms dpkg-dev devscripts \
+                git ca-certificates
+              git config --global --add safe.directory /w/upstream
+
+              # A pristine orig tarball straight from the source ref, so the
+              # source package matches the checked-out commit exactly.
+              cd upstream
+              git archive --format=tar --prefix="${PKG}-${UPSTREAM}/" HEAD \
+                | gzip -n > "/w/${PKG}_${UPSTREAM}.orig.tar.gz"
+
+              # Lay the debian/ recipe over the extracted source and build the
+              # full source package plus the arch:all .deb.
+              cd /w
+              tar xf "${PKG}_${UPSTREAM}.orig.tar.gz"
+              cp -r recipe/debian "${PKG}-${UPSTREAM}/"
+              cd "${PKG}-${UPSTREAM}"
+              dpkg-buildpackage -us -uc
+            '
+          echo "=== build products ==="
+          ls -la ./*.deb ./*.dsc ./*.changes ./*.buildinfo \
+            ./*.orig.tar.* ./*.debian.tar.*
+
+      - name: Upload .deb set + source package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.package-name }}_${{ steps.version.outputs.packaging }}
+          path: |
+            ./*.deb
+            ./*.dsc
+            ./*.changes
+            ./*.buildinfo
+            ./*.orig.tar.*
+            ./*.debian.tar.*
+          if-no-files-found: error
+          retention-days: 30

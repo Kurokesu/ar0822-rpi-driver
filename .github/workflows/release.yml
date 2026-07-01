@@ -1,9 +1,7 @@
 name: Release
 
-# Publish on a debian/<full-version> tag push. Paired-tag procedure:
-# tag the source on main as v<upstream> first, then tag the packaging on
-# debian/latest as debian/<upstream>-<rev> to trigger this workflow.
-# See debian/source/README.source for the full release procedure.
+# Durable publish on a debian/<full-version> tag push. Cut releases with
+# release.sh. See "Releasing" in debian/source/README.source.
 
 on:
   push:
@@ -72,71 +70,11 @@ jobs:
 
   build:
     needs: preflight
-    name: Build source package
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout packaging (debian/latest)
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
-          path: recipe
-
-      - name: Checkout source at paired tag
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
-          ref: ${{ needs.preflight.outputs.upstream-ref }}
-          path: upstream
-
-      - name: Build source + binary package in a clean Debian trixie container
-        env:
-          PKG: ar0822-rpi-dkms
-          UPSTREAM: ${{ needs.preflight.outputs.upstream-version }}
-        run: |
-          set -euo pipefail
-          docker run --rm -e PKG -e UPSTREAM \
-            -v "$PWD":/w -w /w \
-            debian:trixie bash -euo pipefail -c '
-              apt-get update -qq
-              apt-get install -y --no-install-recommends \
-                build-essential debhelper dh-dkms dpkg-dev devscripts \
-                git ca-certificates
-              git config --global --add safe.directory /w/upstream
-
-              # A pristine orig tarball straight from the paired source tag,
-              # so the source package matches the tagged commit exactly.
-              cd upstream
-              git archive --format=tar --prefix="${PKG}-${UPSTREAM}/" HEAD \
-                | gzip -n > "/w/${PKG}_${UPSTREAM}.orig.tar.gz"
-
-              # Lay the debian/ recipe over the extracted source and build the
-              # full source package plus the arch:all .deb. No -b: the module
-              # and overlay are still compiled on target by DKMS, not here.
-              cd /w
-              tar xf "${PKG}_${UPSTREAM}.orig.tar.gz"
-              cp -r recipe/debian "${PKG}-${UPSTREAM}/"
-              cd "${PKG}-${UPSTREAM}"
-              dpkg-buildpackage -us -uc
-            '
-          echo "=== build products ==="
-          ls -la ./*.deb ./*.dsc ./*.changes ./*.buildinfo \
-            ./*.orig.tar.* ./*.debian.tar.*
-
-      - name: Upload .deb set + source package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ env.PKG }}_${{ needs.preflight.outputs.packaging-version }}
-          path: |
-            ./*.deb
-            ./*.dsc
-            ./*.changes
-            ./*.buildinfo
-            ./*.orig.tar.*
-            ./*.debian.tar.*
-          if-no-files-found: error
-          retention-days: 30
-        env:
-          PKG: ar0822-rpi-dkms
+    uses: ./.github/workflows/_build.yml
+    with:
+      source-repo: ${{ github.repository }}
+      upstream-ref: ${{ needs.preflight.outputs.upstream-ref }}
+      package-name: ar0822-rpi-dkms
 
   sign:
     needs: [preflight, build]
