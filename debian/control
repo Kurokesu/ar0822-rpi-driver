@@ -13,9 +13,8 @@ Depends: ${misc:Depends}, dkms
 Recommends: linux-headers-rpi-2712 | linux-headers-rpi-v8
 Description: Onsemi AR0822 camera driver for Raspberry Pi (DKMS)
  Kernel module and device tree overlay for Onsemi AR0822, an 8 MP
- rolling shutter back side illuminated CMOS image sensor, on Raspberry Pi
- running a 6.12 or newer kernel.
+ rolling shutter CMOS sensor, on Raspberry Pi with kernel 6.12 or newer.
  .
- The module is compiled on target with DKMS, so a single package works
- across Raspberry Pi OS releases and kernel updates. Installing the package
- also builds and installs ar0822 device tree overlay to /boot/overlays.
+ DKMS builds the module on target, so one package covers every Raspberry Pi
+ OS release and kernel update. Installing it also places ar0822 overlay
+ in /boot/overlays.
