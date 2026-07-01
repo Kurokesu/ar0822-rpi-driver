@@ -1,55 +1,73 @@
 Packaging layout and release procedure
 =======================================
 
-This is the packaging branch for ar0822-rpi-dkms, kept separate from the
-driver source under the DEP-14 layout:
+Packaging branch for ar0822-rpi-dkms, kept separate from driver source
+under a DEP-14 layout:
 
   * main           - driver source (ar0822.c, Makefile, overlay, dkms.conf,
                      setup.sh). Tagged v<upstream> per release.
   * debian/latest  - this branch: debian/ recipe only, no source. Tagged
                      debian/<upstream>-<revision> per packaging release.
 
-The two branches never share files. The release build fetches the source
-from the v<upstream> tag and lays this debian/ recipe over it.
+The two branches never share files. A release build fetches source from
+the v<upstream> tag and lays this debian/ recipe over it.
+
+Branch layout
+-------------
+
+This branch carries the recipe, release tooling and workflows that
+exercise it:
+
+  * debian/            - recipe (debhelper + dh-dkms, arch:all).
+  * .github/workflows/ - _build.yml (reusable build), ci.yml (branch
+                         validation), release.yml (tagged publish).
+  * .github/keys/      - archive public keyring for the sign job's gpgv.
+  * release.sh         - operator tool that cuts a paired release.
+
+Workflow files live here, not on main, because GitHub Actions resolves
+pull_request and tag-push triggers from a base branch's own workflow
+files. Hosting them on main would stop PRs that target debian/latest
+from triggering CI.
 
 Releasing
 ---------
 
-A release is a pair of tags. The source tag must exist before the packaging
-tag is pushed, or .github/workflows/release.yml fails in preflight.
+A release is a pair of tags:
 
-  1. Source (on main), once per upstream version:
+  * main is tagged v<upstream>, revision-less, e.g. v0.1.0.
+  * debian/latest is tagged debian/<upstream>-<revision>, carrying a
+    Debian revision, e.g. debian/0.1.0-1.
 
-       git checkout main
-       git tag -a v0.1.0 -m "ar0822-rpi-dkms 0.1.0"
-       git push origin v0.1.0
+To release, run ./release.sh --execute from this branch. No arguments
+does a dry run. It derives both tag names from debian/changelog on the
+remote packaging tip, reuses a source tag across packaging-only rebuilds,
+refuses to tag unless latest CI on the tip is green and pushes both tags
+atomically. That packaging-tag push triggers release.yml.
 
-  2. Packaging (on debian/latest), once per revision. Ensure
-     debian/changelog's top entry matches, then:
+Manual equivalent (what release.sh automates):
 
-       git checkout debian/latest
-       git tag -a debian/0.1.0-1 -m "ar0822-rpi-dkms 0.1.0-1"
-       git push origin debian/0.1.0-1
+  1. Tag source on main with v<upstream>.
+  2. Tag this branch with debian/<upstream>-<revision>.
+  3. Push both tags.
 
-Pushing the debian/** tag triggers release.yml, which:
+A packaging-only rebuild (0.1.0-1 to 0.1.0-2) moves only a packaging tag
+and refreshes an existing release page. Source tag v0.1.0 is reused, not
+retagged.
 
-  * preflight - parses debian/<upstream>-<rev>, derives v<upstream>, verifies
-    the source tag exists and matches debian/changelog.
-  * build     - git archive v<upstream> -> orig tarball, overlays debian/,
-    dpkg-buildpackage -us -uc (arch:all .deb + full source package).
-  * sign      - bundles .deb/.changes/.buildinfo, signs SHA256SUMS with the
-    archive key, self-verifies against .github/keys/kurokesu-archive-keyring.gpg.
-  * publish   - creates the GitHub pre-release on the v<upstream> tag.
+New releases ship as pre-releases with skeleton notes. Fill notes by hand
+before promoting to Latest.
 
-A packaging-only rebuild (0.1.0-1 -> 0.1.0-2) adds a debian/changelog entry
-and a new debian/0.1.0-2 tag; the source tag v0.1.0 is reused, not retagged.
+Release assets: a tarball ar0822-rpi-dkms_<full-version>.tar.gz carrying
+the .deb plus a build's .changes and .buildinfo, alongside SHA256SUMS and
+a detached SHA256SUMS.asc. A source package stays in workflow-run
+artifacts only.
 
 Migrating from a setup.sh install
 ---------------------------------
 
-If the module was previously installed by the repository's setup.sh, DKMS
-owns the module tree under the same package name and the first package
-install collides. Remove the hand-built module once:
+If setup.sh already installed the module, DKMS owns its tree under the
+same package name, so a first package install collides. Remove the
+hand-built module once:
 
   sudo dkms remove ar0822-rpi-dkms/<old-version> --all
   sudo dpkg --configure -a   # if a package install was interrupted
