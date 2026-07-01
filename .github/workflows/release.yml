@@ -18,6 +18,7 @@ jobs:
       packaging-version: ${{ steps.parse.outputs.packaging }}
       upstream-version: ${{ steps.parse.outputs.upstream }}
       upstream-ref: ${{ steps.parse.outputs.ref }}
+      changelog: ${{ steps.notes.outputs.changelog }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -67,6 +68,20 @@ jobs:
             exit 1
           fi
           echo "OK: tag matches changelog (${CHANGELOG})"
+
+      - name: Extract changelog entry for release notes
+        id: notes
+        run: |
+          set -euo pipefail
+          # Top entry only: drop the header line, stop at the trailer, then
+          # trim surrounding blank lines.
+          BODY=$(awk 'NR==1{next} /^ -- /{exit} {print}' debian/changelog \
+            | sed -e '/./,$!d' | tac | sed -e '/./,$!d' | tac)
+          {
+            echo "changelog<<CHANGELOG_EOF"
+            printf '%s\n' "$BODY"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: preflight
@@ -170,11 +185,10 @@ jobs:
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          CHANGELOG: ${{ needs.preflight.outputs.changelog }}
         run: |
           set -euo pipefail
           TAG="${{ needs.preflight.outputs.upstream-ref }}"
-          PKG_REV="${{ needs.preflight.outputs.packaging-version }}"
-          UPSTREAM="${{ needs.preflight.outputs.upstream-version }}"
 
           # Re-run on an existing release refreshes its assets, leaving title,
           # notes and the Pre-release flag intact. Clear the assets first then
@@ -189,36 +203,10 @@ jobs:
             exit 0
           fi
 
-          # Skeleton notes for manual fill-in before promoting
-          # from Pre-release to Latest.
-          NOTES=$(cat <<EOF
-          DKMS package for the Onsemi AR0822 camera driver on Raspberry Pi.
-
-          ### Hardware validated
-
-
-          ### Install
-
-          \`\`\`
-          sudo apt install ./ar0822-rpi-dkms_${UPSTREAM}-*_all.deb
-          \`\`\`
-
-          Migrating from a \`setup.sh\` install? Remove the hand-built module once
-          before the first package install:
-
-          \`\`\`
-          sudo dkms remove ar0822-rpi-dkms/<old-version> --all
-          \`\`\`
-
-          Verify integrity with the signed \`SHA256SUMS.asc\` against the Kurokesu
-          archive key.
-
-          Packaging revision: \`${PKG_REV}\`
-          EOF
-          )
-
+          # Notes seed from the changelog entry and get edited by hand
+          # before promoting from Pre-release to Latest.
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
             --title "$TAG" \
             --prerelease \
-            --notes "$NOTES" \
+            --notes "$CHANGELOG" \
             release-assets/*
