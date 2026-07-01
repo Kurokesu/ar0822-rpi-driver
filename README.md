@@ -1,6 +1,7 @@
 # Kernel driver for AR0822
 
-[![code formatting](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml)
+[![Build](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/build-rpi.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/build-rpi.yml)
+[![Code style](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml)
 [![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
 [![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
 
