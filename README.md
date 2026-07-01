@@ -1,4 +1,4 @@
-# Kernel driver for AR0822
+# AR0822 kernel driver for Raspberry Pi
 
 [![Build](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/build-rpi.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/build-rpi.yml)
 [![Code style](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml)
