@@ -44,6 +44,17 @@ else
 	SRC_NOTE="new tag on ${REMOTE}/${SRC_BRANCH}"
 fi
 
+# Catch version drift before any tags exist. The build guard in
+# debian/rules would fail too, but only mid-release.
+DKMS_VER=$(git show "${SRC_SHA}:dkms.conf" \
+	| sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p')
+if [ "$DKMS_VER" != "$UPSTREAM" ]; then
+	echo "ERROR: dkms.conf at ${SRC_SHA} says '${DKMS_VER}'," >&2
+	echo "       but debian/changelog says '${UPSTREAM}'." >&2
+	echo "       Bump dkms.conf on ${SRC_BRANCH} to match." >&2
+	exit 1
+fi
+
 # A pre-existing packaging tag pointing elsewhere means the release
 # was already cut from a different commit. Never silently retag.
 if EXISTING=$(git rev-parse -q --verify "refs/tags/${PKG_TAG}^{commit}"); then
