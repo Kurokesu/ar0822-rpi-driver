@@ -13,6 +13,9 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   build:
     uses: Kurokesu/ci/.github/workflows/dkms-build.yml@main

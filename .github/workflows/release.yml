@@ -10,6 +10,9 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   release:
     uses: Kurokesu/ci/.github/workflows/dkms-release.yml@main
