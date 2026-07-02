@@ -15,14 +15,19 @@ the v<upstream> tag and lays this debian/ recipe over it.
 Branch layout
 -------------
 
-This branch carries the recipe, release tooling and workflows that
-exercise it:
+This branch carries the recipe and thin entry points into the shared
+CI/CD machinery in Kurokesu/ci:
 
   * debian/            - recipe (debhelper + dh-dkms, arch:all).
-  * .github/workflows/ - _build.yml (reusable build), ci.yml (branch
-                         validation), release.yml (tagged publish).
-  * .github/keys/      - archive public keyring for the sign job's gpgv.
-  * release.sh         - operator tool that cuts a paired release.
+  * .github/workflows/ - ci.yml (branch validation) and release.yml
+                         (tagged publish), shims calling the reusable
+                         workflows in Kurokesu/ci.
+  * release.sh         - launcher that fetches and runs the canonical
+                         release script from Kurokesu/ci.
+
+Build, sign and publish logic and the archive keyring live in
+Kurokesu/ci. Shims and launcher resolve its main branch at run time,
+so fixes there apply here without a commit.
 
 Workflow files live here, not on main, because GitHub Actions resolves
 pull_request and tag-push triggers from a base branch's own workflow
