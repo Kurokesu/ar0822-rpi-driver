@@ -15,8 +15,6 @@ permissions:
 
 jobs:
   build:
-    uses: ./.github/workflows/_build.yml
+    uses: Kurokesu/ci/.github/workflows/dkms-build.yml@main
     with:
-      source-repo: ${{ github.repository }}
       upstream-ref: main
-      package-name: ar0822-rpi-dkms
