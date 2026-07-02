@@ -5,7 +5,9 @@
 # The packaging-tag push triggers .github/workflows/release.yml.
 # See "Releasing" in debian/source/README.source.
 #
-# Usage: ./release.sh [--execute]   (no args = dry run)
+# Usage: ./release.sh [--prepare | --execute]   (no args = dry run)
+#   --prepare opens a debian/changelog entry versioned from dkms.conf
+#   on the source branch, the one place a human bumps the version.
 set -eu
 
 REMOTE=origin
@@ -13,12 +15,49 @@ SRC_BRANCH=main
 PKG_BRANCH=debian/latest
 
 # Default to a dry run. Tagging and pushing require an explicit --execute.
-DRY=1
+MODE=dry-run
 case "${1:-}" in
-	--execute) DRY=0 ;;
-	--dry-run|'') DRY=1 ;;
-	*) echo "usage: $0 [--execute]   (no args = dry run)" >&2; exit 2 ;;
+	--prepare) MODE=prepare ;;
+	--execute) MODE=execute ;;
+	--dry-run|'') MODE=dry-run ;;
+	*) echo "usage: $0 [--prepare | --execute]   (no args = dry run)" >&2; exit 2 ;;
 esac
+
+if [ "$MODE" = prepare ]; then
+	[ -f debian/changelog ] || {
+		echo "ERROR: no debian/changelog here. Run from the packaging worktree." >&2
+		exit 1
+	}
+	git fetch --quiet "$REMOTE" "$SRC_BRANCH"
+	DKMS_VER=$(git show "${REMOTE}/${SRC_BRANCH}:dkms.conf" \
+		| sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p')
+	[ -n "$DKMS_VER" ] || {
+		echo "ERROR: no PACKAGE_VERSION in dkms.conf on ${REMOTE}/${SRC_BRANCH}." >&2
+		exit 1
+	}
+	CUR=$(dpkg-parsechangelog -SVersion)
+	CUR_UPSTREAM=${CUR#*:}; CUR_UPSTREAM=${CUR_UPSTREAM%-*}
+	# Same upstream means a packaging-only rebuild, so bump the revision.
+	if [ "$DKMS_VER" = "$CUR_UPSTREAM" ]; then
+		NEW="${DKMS_VER}-$(( ${CUR##*-} + 1 ))"
+		MSG="Packaging update."
+	else
+		NEW="${DKMS_VER}-1"
+		MSG="New upstream release."
+	fi
+	dpkg --compare-versions "$NEW" gt "$CUR" || {
+		echo "ERROR: computed ${NEW} does not advance ${CUR}." >&2
+		echo "       Bump dkms.conf on ${SRC_BRANCH} first." >&2
+		exit 1
+	}
+	# A "name <email>" DEBEMAIL gives dch both attribution fields.
+	DEBEMAIL=$(sed -n 's/^Maintainer:[[:space:]]*//p' debian/control) \
+		dch --newversion "$NEW" --distribution unstable \
+		--force-distribution "$MSG"
+	echo "Opened ${NEW} in debian/changelog."
+	echo "Edit the entry, commit, push, then rerun $0 once CI is green."
+	exit 0
+fi
 
 git fetch --tags --quiet "$REMOTE"
 
@@ -89,7 +128,7 @@ if [ "$CONCLUSION" != "success" ]; then
 	exit 1
 fi
 
-if [ "$DRY" -eq 1 ]; then
+if [ "$MODE" = dry-run ]; then
 	echo "Dry run - no tags created, nothing pushed."
 	echo "Re-run with --execute to create and push the tags."
 	exit 0
