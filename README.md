@@ -28,25 +28,27 @@ curl -fsSLO https://apt.kurokesu.com/setup.sh
 sudo sh setup.sh --update
 ```
 
-> [!NOTE]
-> Requires Linux kernel 6.1 or newer. Verify with `uname -r`.
+> [!IMPORTANT]
+> If driver or camera stack was previously built from source, a one-time cleanup is required before first apt install.
 
-Install required tools:
+<details>
+<summary>Migrating from a source install</summary>
 
-```bash
-sudo apt install -y git
-sudo apt install -y --no-install-recommends dkms
-```
-
-Clone this repository:
+Remove `ar0822` driver modules installed by `setup.sh`:
 
 ```bash
-cd ~
-git clone https://github.com/Kurokesu/ar0822-rpi-driver.git
-cd ar0822-rpi-driver/
+dkms status | grep ar0822 | cut -d, -f1 | sort -u | xargs -rI{} sudo dkms remove {} --all
 ```
 
-Run setup script:
+Source-built `libcamera` and `rpicam-apps` install to `/usr/local` and shadow packaged binaries. Uninstall from their build directories:
+
+```bash
+sudo ninja -C ~/libcamera/build uninstall
+sudo ninja -C ~/rpicam-apps/build uninstall
+```
+
+</details>
+
 
 ```bash
 sudo ./setup.sh
