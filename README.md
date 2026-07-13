@@ -109,7 +109,7 @@ dtoverlay=ar0822,4lane
 > Before using `4lane`, confirm your camera port actually supports 4-lane MIPI CSI. Not all Raspberry Pi models and carrier boards provide 4-lane MIPI CSI on both ports.
 
 > [!TIP]
-> Options can be combined. Example — cam0, 4-lane:
+> Options can be combined. Example (cam0, 4-lane):
 > ```ini
 > dtoverlay=ar0822,cam0,4lane
 > ```
