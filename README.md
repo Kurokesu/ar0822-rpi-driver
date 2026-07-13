@@ -14,6 +14,10 @@ Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 - 3840×2160 @ 40 fps (full resolution)
 - 1920×1080 @ 120 fps (2×2 binning)
 
+![Kurokesu camera modules connected to a Raspberry Pi 5](https://raw.githubusercontent.com/Kurokesu/ar0822-rpi-driver/main/docs/kurokesu-on-pi.jpg)
+
+*AR0822 camera modules are available at [kurokesu.com](https://www.kurokesu.com/item/822C-CSI).*
+
 > [!NOTE]
 > This driver supports an experimental eHDR mode, modeled after IMX708
 > implementation, by exposing the standard `V4L2_CID_WIDE_DYNAMIC_RANGE` control.
