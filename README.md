@@ -21,15 +21,15 @@ Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 
 ## Install
 
+> [!IMPORTANT]
+> If driver or camera stack was previously built from source, run one-time cleanup before first apt install. See [migrating from a source install](#migrating-from-a-source-install).
+
 Enable Kurokesu apt archive:
 
 ```bash
 curl -fsSLO https://apt.kurokesu.com/setup.sh
 sudo sh setup.sh --update
 ```
-
-> [!IMPORTANT]
-> If driver or camera stack was previously built from source, run one-time cleanup before first apt install. See [migrating from a source install](#migrating-from-a-source-install).
 
 Install driver and camera stack:
 
@@ -142,6 +142,37 @@ Available cameras
     Modes: 'SGRBG12_CSI2P' : 1920x1080 [48.04 fps - (0, 0)/3840x2160 crop]
                              3840x2160 [30.01 fps - (0, 0)/3840x2160 crop]
 ```
+
+## Build from source
+
+Install required tools:
+
+```bash
+sudo apt install -y git
+sudo apt install -y --no-install-recommends dkms
+```
+
+Clone this repository:
+
+```bash
+cd ~
+git clone https://github.com/Kurokesu/ar0822-rpi-driver.git
+cd ar0822-rpi-driver/
+```
+
+If driver was installed from apt archive previously, remove it first:
+
+```bash
+sudo apt remove ar0822-rpi-dkms
+```
+
+Run setup script:
+
+```bash
+sudo ./setup.sh
+```
+
+Camera stack, boot configuration and verification follow [Install](#install). To build `libcamera` and `rpicam-apps` from source as well, see [BUILDING.md](https://github.com/Kurokesu/libcamera/blob/kurokesu/BUILDING.md).
 
 ### Migrating from a source install
 
