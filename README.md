@@ -24,7 +24,7 @@ Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 > [!IMPORTANT]
 > If driver or camera stack was previously built from source, run one-time cleanup before first apt install. See [migrating from a source install](#migrating-from-a-source-install).
 
-Enable Kurokesu apt archive:
+Enable Kurokesu apt archive (skip if already enabled):
 
 ```bash
 curl -fsSLO https://apt.kurokesu.com/setup.sh
