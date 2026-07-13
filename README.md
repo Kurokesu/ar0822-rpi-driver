@@ -28,16 +28,17 @@ Enable Kurokesu apt archive (skip if already enabled):
 
 ```bash
 curl -fsSLO https://apt.kurokesu.com/setup.sh
-sudo sh setup.sh --update
+sudo sh setup.sh
 ```
 
 Install driver and camera stack:
 
 ```bash
+sudo apt update
 sudo apt install -y ar0822-rpi-dkms rpicam-apps
 ```
 
-With archive enabled, apt resolves Kurokesu `rpicam-apps` and `libcamera` forks with AR0822 support as updates to stock packages.
+*With archive enabled, apt resolves Kurokesu `rpicam-apps` and `libcamera` forks with AR0822 support as updates to stock packages.*
 
 Edit boot configuration:
 
