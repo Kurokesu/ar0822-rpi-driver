@@ -2,10 +2,10 @@
 
 [![Build](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/build-rpi.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/build-rpi.yml)
 [![Code style](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/code-style.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/code-style.yml)
-[![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
-[![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
-[![Kernel 6.12+](https://img.shields.io/badge/kernel-6.12%2B-blue?logo=raspberrypi)](https://github.com/raspberrypi/linux/tree/rpi-6.12.y)
+[![Release](https://img.shields.io/github/v/release/Kurokesu/ar0822-rpi-driver)](https://github.com/Kurokesu/ar0822-rpi-driver/releases/latest)
 [![Kurokesu apt archive](https://img.shields.io/badge/apt-apt.kurokesu.com-D70A53?logo=debian)](https://apt.kurokesu.com)
+[![RPi OS Bookworm | Trixie](https://img.shields.io/badge/RPi_OS-Bookworm_%7C_Trixie-blue?logo=raspberrypi)](https://www.raspberrypi.com/software/operating-systems/)
+[![Kernel 6.12+](https://img.shields.io/badge/kernel-6.12%2B-blue?logo=raspberrypi)](https://github.com/raspberrypi/linux/tree/rpi-6.12.y)
 
 Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
 
@@ -16,7 +16,7 @@ Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 
 ![Kurokesu camera modules connected to a Raspberry Pi 5](https://raw.githubusercontent.com/Kurokesu/ar0822-rpi-driver/main/docs/kurokesu-on-pi.jpg)
 
-*AR0822 camera modules are available at [kurokesu.com](https://www.kurokesu.com/item/822C-CSI).*
+*AR0822 camera modules are available at [kurokesu.com](https://www.kurokesu.com/item/822C-CSI)*
 
 > [!NOTE]
 > This driver supports an experimental eHDR mode, modeled after IMX708
