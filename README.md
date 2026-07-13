@@ -197,7 +197,7 @@ sudo ./setup.sh
 
 Camera stack, boot configuration and verification follow [Install](#install). To build `libcamera` and `rpicam-apps` from source as well, see [libcamera/BUILDING.md](https://github.com/Kurokesu/libcamera/blob/kurokesu/BUILDING.md).
 
-### Migrating from a source install
+## Migrating from a source install
 
 One-time cleanup before first apt install.
 
