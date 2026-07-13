@@ -82,8 +82,23 @@ dtoverlay=ar0822
 
 Save and exit. Reboot for changes to take effect.
 
-> [!IMPORTANT]
-> Stock `libcamera` does not support AR0822 — you must build a patched version for camera to function. See [Build libcamera](#build-libcamera) below.
+Verify camera is detected:
+
+```bash
+rpicam-hello --list-cameras
+```
+
+Expected output (varies by link frequency and lane configuration):
+
+```
+Available cameras
+-----------------
+0 : ar0822 [3840x2160 12-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0822@10)
+    Modes: 'SGRBG10_CSI2P' : 1920x1080 [120.15 fps - (0, 0)/3840x2160 crop]
+                             3840x2160 [40.03 fps - (0, 0)/3840x2160 crop]
+           'SGRBG12_CSI2P' : 1920x1080 [120.21 fps - (0, 0)/3840x2160 crop]
+                             3840x2160 [33.89 fps - (0, 0)/3840x2160 crop]
+```
 
 ## dtoverlay options
 
@@ -118,167 +133,6 @@ dtoverlay=ar0822,4lane
 > ```ini
 > dtoverlay=ar0822,cam0,4lane
 > ```
-
-## Build libcamera
-
-Main `libcamera` repository does not support AR0822. A fork with necessary modifications is available.
-
-On Raspberry Pi, `libcamera` and `rpicam-apps` must be rebuilt together. Detailed instructions are available [here](https://www.raspberrypi.com/documentation/computers/camera_software.html#advanced-rpicam-apps), but for convenience, here is a shorter version.
-
-Remove pre-installed `rpicam-apps`:
-
-```bash
-sudo apt remove --purge rpicam-apps
-```
-
-### libcamera
-
-Install dependencies:
-
-```bash
-sudo apt install -y libboost-dev
-sudo apt install -y libgnutls28-dev openssl libtiff5-dev pybind11-dev
-sudo apt install -y qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
-sudo apt install -y meson cmake
-sudo apt install -y python3-yaml python3-ply
-sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
-```
-
-Clone Kurokesu's `libcamera` fork with AR0822 support:
-
-```bash
-cd ~
-git clone https://github.com/Kurokesu/libcamera.git --branch ar0822
-cd libcamera/
-```
-
-Configure with `meson`:
-
-```bash
-meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
-```
-
-Build:
-
-```bash
-ninja -C build
-```
-
-Install:
-
-```bash
-sudo ninja -C build install
-```
-
-> [!TIP]
-> On devices with 1 GB of memory or less, build may exceed available memory. Append `-j 1` to limit to a single process.
-
-> [!WARNING]
-> `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after building `libcamera`.
-
-### rpicam-apps
-
-Install dependencies:
-
-```bash
-sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
-sudo apt install -y libavcodec-dev libavdevice-dev libavformat-dev libswresample-dev
-sudo apt install -y libepoxy-dev libpng-dev
-```
-
-Clone Kurokesu's `rpicam-apps` fork with HDR modifications:
-
-```bash
-cd ~
-git clone https://github.com/Kurokesu/rpicam-apps.git --branch hdr-ar0822
-cd rpicam-apps
-```
-
-Configure with `meson` (libav enabled by default):
-
-```bash
-meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
-```
-
-> [!IMPORTANT]
-> On Raspberry Pi OS **Bookworm**, packaged `libav*` is **too old** for `rpicam-apps` newer than v1.9.0.
-
-<details>
-<summary>Bookworm libav workaround</summary>
-
-Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60**, causing build errors like "libavcodec API version is too old" (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
-
-- **Keep libav, without eHDR** — check out `rpicam-apps` **v1.9.0** before running `meson setup` (v1.9.0 predates eHDR patches, so eHDR will **not** be available):
-  ```bash
-  git checkout v1.9.0
-  ```
-- **Keep eHDR, disable libav** — stay on `hdr-ar0822` branch and disable libav:
-  ```bash
-  meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
-  ```
-
-</details>
-
-Build:
-
-```bash
-meson compile -C build
-```
-
-Install:
-
-```bash
-sudo meson install -C build
-```
-
-> [!TIP]
-> This should automatically update `ldconfig` cache. If you have trouble accessing your new build, update manually:
->
-> ```bash
-> sudo ldconfig
-> ```
-
-### Verify rpicam-apps build
-
-Verify `rpicam-apps` was rebuilt correctly:
-
-```bash
-rpicam-hello --version
-```
-
-Expected output (build date will differ):
-
-```
-rpicam-apps build: v1.11.1 d2836f37957f 25-02-2026 (14:43:27)
-rpicam-apps capabilites: egl:1 qt:1 drm:1 libav:1
-libcamera build: v0.0.0+6160-8903357b
-```
-
-### Verify that `ar0822` is detected
-
-Do not forget to reboot!
-
-```bash
-sudo reboot
-```
-
-List available cameras:
-
-```bash
-rpicam-hello --list-cameras
-```
-
-Expected output (varies by link frequency and lane configuration):
-
-```
-Available cameras
------------------
-0 : ar0822 [3840x2160 12-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0822@10)
-    Modes: 'SGRBG10_CSI2P' : 1920x1080 [120.15 fps - (0, 0)/3840x2160 crop]
-                             3840x2160 [40.03 fps - (0, 0)/3840x2160 crop]
-           'SGRBG12_CSI2P' : 1920x1080 [120.21 fps - (0, 0)/3840x2160 crop]
-                             3840x2160 [33.89 fps - (0, 0)/3840x2160 crop]
-```
 
 ## eHDR (experimental)
 
