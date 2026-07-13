@@ -47,12 +47,17 @@ sudo ninja -C ~/libcamera/build uninstall
 sudo ninja -C ~/rpicam-apps/build uninstall
 ```
 
+Cleanup complete. Continue with install steps below.
+
 </details>
 
+Install driver and camera stack:
 
 ```bash
-sudo ./setup.sh
+sudo apt install -y ar0822-rpi-dkms rpicam-apps
 ```
+
+`rpicam-apps` from the archive pulls Kurokesu `libcamera` with AR0822 support included. Updates arrive with regular `apt upgrade`, no source builds required.
 
 Edit boot configuration:
 
