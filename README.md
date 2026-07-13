@@ -29,27 +29,7 @@ sudo sh setup.sh --update
 ```
 
 > [!IMPORTANT]
-> If driver or camera stack was previously built from source, a one-time cleanup is required before first apt install.
-
-<details>
-<summary>Migrating from a source install</summary>
-
-Remove `ar0822` driver modules installed by `setup.sh`:
-
-```bash
-dkms status | grep ar0822 | cut -d, -f1 | sort -u | xargs -rI{} sudo dkms remove {} --all
-```
-
-Source-built `libcamera` and `rpicam-apps` install to `/usr/local` and shadow packaged binaries. Uninstall from their build directories:
-
-```bash
-sudo ninja -C ~/libcamera/build uninstall
-sudo ninja -C ~/rpicam-apps/build uninstall
-```
-
-Cleanup complete. Continue with install steps below.
-
-</details>
+> If driver or camera stack was previously built from source, run one-time cleanup before first apt install. See [migrating from a source install](#migrating-from-a-source-install).
 
 Install driver and camera stack:
 
@@ -162,6 +142,25 @@ Available cameras
     Modes: 'SGRBG12_CSI2P' : 1920x1080 [48.04 fps - (0, 0)/3840x2160 crop]
                              3840x2160 [30.01 fps - (0, 0)/3840x2160 crop]
 ```
+
+### Migrating from a source install
+
+One-time cleanup before first apt install.
+
+Remove `ar0822` driver modules installed by `setup.sh`:
+
+```bash
+dkms status | grep ar0822 | cut -d, -f1 | sort -u | xargs -rI{} sudo dkms remove {} --all
+```
+
+Source-built `libcamera` and `rpicam-apps` install to `/usr/local` and shadow packaged binaries. Uninstall from their build directories:
+
+```bash
+sudo ninja -C ~/libcamera/build uninstall
+sudo ninja -C ~/rpicam-apps/build uninstall
+```
+
+Cleanup complete. Continue with [install steps](#install).
 
 ## Special thanks
 
