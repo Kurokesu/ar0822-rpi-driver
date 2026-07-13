@@ -40,7 +40,7 @@ sudo apt update
 sudo apt install -y ar0822-rpi-dkms rpicam-apps
 ```
 
-*With archive enabled, apt resolves Kurokesu `rpicam-apps` and `libcamera` forks with AR0822 support as updates to stock packages.*
+*With archive enabled, apt resolves Kurokesu `rpicam-apps` and `libcamera` forks with AR0822 support as updates to stock packages. Later updates arrive with regular `apt upgrade`.*
 
 Edit boot configuration:
 
@@ -67,7 +67,7 @@ dtoverlay=ar0822
 
 Save and exit.
 
-Reboot for changes to take effect after any `config.txt` edit:
+`config.txt` changes take effect after reboot:
 
 ```bash
 sudo reboot
@@ -79,7 +79,7 @@ Verify camera is detected:
 rpicam-hello --list-cameras
 ```
 
-Expected output (varies by link frequency and lane configuration):
+Expected output (varies by lane configuration):
 
 ```
 Available cameras
@@ -139,10 +139,10 @@ dtoverlay=ar0822,4lane
 
 ## eHDR (experimental)
 
-AR0822 features an on‑sensor HDR mode that expands dynamic range up to 120 dB by combining three exposures within sensor using the MEC algorithm. To reduce bandwidth requirements, linearized 20‑bit HDR signal is companded to a 12‑bit output.
+AR0822 features an on-sensor HDR mode that expands dynamic range up to 120 dB by combining three exposures within sensor using the MEC algorithm. To reduce bandwidth requirements, linearized 20-bit HDR signal is companded to a 12-bit output.
 
 > [!IMPORTANT]
-> libcamera pipeline is designed for linear image data from sensor. While Kurokesu's fork HDR implementation is experimental, companded data may show color shifts due to compression.
+> libcamera pipeline is designed for linear image data from sensor. Kurokesu's fork HDR implementation is experimental. Companded data may show color shifts due to compression.
 
 Due to exposure range limitations, running at maximum fps with current PIXCLK configuration reduces maximum exposure drastically.
 
@@ -207,11 +207,10 @@ Remove `ar0822` driver modules installed by `setup.sh`:
 dkms status | grep ar0822 | cut -d, -f1 | sort -u | xargs -rI{} sudo dkms remove {} --all
 ```
 
-Source-built `libcamera` and `rpicam-apps` install to `/usr/local` and shadow packaged binaries. Uninstall from their build directories:
+Source-built `libcamera` and `rpicam-apps` install to `/usr/local` and shadow packaged binaries. Remove them:
 
 ```bash
-sudo ninja -C ~/libcamera/build uninstall
-sudo ninja -C ~/rpicam-apps/build uninstall
+sudo find /usr/local -depth \( -name '*libcamera*' -o -name '*rpicam*' -o -name '*libpisp*' \) -exec rm -rf {} +
 ```
 
 Cleanup complete. Continue with [install steps](#install).
