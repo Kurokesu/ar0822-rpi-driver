@@ -19,7 +19,14 @@ Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 > implementation, by exposing the standard `V4L2_CID_WIDE_DYNAMIC_RANGE` control.
 > Read more in [eHDR (experimental)](#ehdr-experimental).
 
-## Setup
+## Install
+
+Enable Kurokesu apt archive:
+
+```bash
+curl -fsSLO https://apt.kurokesu.com/setup.sh
+sudo sh setup.sh --update
+```
 
 > [!NOTE]
 > Requires Linux kernel 6.1 or newer. Verify with `uname -r`.
