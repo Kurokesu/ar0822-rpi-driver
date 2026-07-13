@@ -61,7 +61,15 @@ camera_auto_detect=0
 dtoverlay=ar0822
 ```
 
-Save and exit. Reboot for changes to take effect.
+*If camera is connected to cam0 port, use `dtoverlay=ar0822,cam0` instead. See [cam0](#cam0).*
+
+Save and exit.
+
+Reboot for changes to take effect after any `config.txt` edit:
+
+```bash
+sudo reboot
+```
 
 Verify camera is detected:
 
