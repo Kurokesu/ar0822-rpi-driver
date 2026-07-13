@@ -37,7 +37,7 @@ Install driver and camera stack:
 sudo apt install -y ar0822-rpi-dkms rpicam-apps
 ```
 
-`rpicam-apps` from the archive pulls Kurokesu `libcamera` with AR0822 support included. Updates arrive with regular `apt upgrade`, no source builds required.
+With archive enabled, apt resolves Kurokesu `rpicam-apps` and `libcamera` forks with AR0822 support as updates to stock packages.
 
 Edit boot configuration:
 
