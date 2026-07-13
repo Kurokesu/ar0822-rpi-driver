@@ -209,6 +209,9 @@ dkms status | grep ar0822 | cut -d, -f1 | sort -u | xargs -rI{} sudo dkms remove
 
 Source-built `libcamera` and `rpicam-apps` install to `/usr/local` and shadow packaged binaries. Remove them:
 
+> [!WARNING]
+> Command below deletes everything under `/usr/local` with `libcamera`, `rpicam` or `libpisp` in its name, including custom scripts or files named after them.
+
 ```bash
 sudo find /usr/local -depth \( -name '*libcamera*' -o -name '*rpicam*' -o -name '*libpisp*' \) -exec rm -rf {} +
 ```
