@@ -4,8 +4,10 @@
 [![Code style](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0822-rpi-driver/actions/workflows/clang-format.yml)
 [![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
 [![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
+[![Kernel 6.12+](https://img.shields.io/badge/kernel-6.12%2B-blue?logo=raspberrypi)](https://github.com/raspberrypi/linux/tree/rpi-6.12.y)
+[![Kurokesu apt archive](https://img.shields.io/badge/apt-apt.kurokesu.com-D70A53?logo=debian)](https://apt.kurokesu.com)
 
-Raspberry Pi kernel driver for Onsemi AR0822 — an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
+Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
 
 - 2-lane and 4-lane MIPI CSI-2 (up to 960 Mbps/lane)
 - 10-bit and 12-bit RAW output
@@ -13,7 +15,7 @@ Raspberry Pi kernel driver for Onsemi AR0822 — an 8 MP rolling shutter 1/1.8" 
 - 1920×1080 @ 120 fps (2×2 binning)
 
 > [!NOTE]
-> This driver supports an experimental eHDR mode, modeled after the IMX708
+> This driver supports an experimental eHDR mode, modeled after IMX708
 > implementation, by exposing the standard `V4L2_CID_WIDE_DYNAMIC_RANGE` control.
 > Read more in [eHDR (experimental)](#ehdr-experimental).
 
