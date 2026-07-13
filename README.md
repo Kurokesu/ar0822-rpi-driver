@@ -24,6 +24,8 @@ Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 > [!IMPORTANT]
 > If driver or camera stack was previously built from source, run one-time cleanup before first apt install. See [migrating from a source install](#migrating-from-a-source-install).
 
+Connect camera to CSI port with Pi powered off.
+
 Enable Kurokesu apt archive (skip if already enabled):
 
 ```bash
@@ -87,6 +89,18 @@ Available cameras
                              3840x2160 [40.03 fps - (0, 0)/3840x2160 crop]
            'SGRBG12_CSI2P' : 1920x1080 [120.21 fps - (0, 0)/3840x2160 crop]
                              3840x2160 [33.89 fps - (0, 0)/3840x2160 crop]
+```
+
+Start live preview:
+
+```bash
+rpicam-hello -t 0
+```
+
+On headless systems, capture a still image instead:
+
+```bash
+rpicam-still -o test.jpg
 ```
 
 ## dtoverlay options
