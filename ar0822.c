@@ -373,12 +373,12 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 		},
 		.timing_hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
-				.line_length_pck_min = 2372,
-				.frame_length_lines_min = 1404,
+				.line_length_pck_min = 2142,
+				.frame_length_lines_min = 1245,
 			},
 			[AR0822_LANE_MODE_ID_4] = {
-				.line_length_pck_min = 2372,
-				.frame_length_lines_min = 1404,
+				.line_length_pck_min = 2140,
+				.frame_length_lines_min = 1246,
 			},
 		},
 		.reg_sequence = {
@@ -419,8 +419,8 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 				.frame_length_lines_min = 2338,
 			},
 			[AR0822_LANE_MODE_ID_4] = {
-				.line_length_pck_min = 2372,
-				.frame_length_lines_min = 2248,
+				.line_length_pck_min = 2140,
+				.frame_length_lines_min = 2492,
 			},
 		},
 		.reg_sequence = {
