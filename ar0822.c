@@ -219,7 +219,7 @@ struct ar0822_mode {
 	unsigned int height;
 	struct v4l2_rect crop;
 
-	struct ar0822_timing timing_no_hdr[AR0822_NUM_LANE_MODES]
+	struct ar0822_timing timing_linear[AR0822_NUM_LANE_MODES]
 					  [AR0822_NUM_BIT_DEPTHS];
 
 	/* Only 12bit companded HDR mode currently supported. */
@@ -353,7 +353,7 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 			.width = 3840,
 			.height = 2160,
 		},
-		.timing_no_hdr = {
+		.timing_linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1812,
 				.frame_length_lines_min = 1122,
@@ -395,7 +395,7 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 			.width = 3840,
 			.height = 2160,
 		},
-		.timing_no_hdr = {
+		.timing_linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 3412,
 				.frame_length_lines_min = 2206,
@@ -440,7 +440,7 @@ static const struct ar0822_mode ar0822_modes_24_960[] = {
 			.width = 3840,
 			.height = 2160,
 		},
-		.timing_no_hdr = {
+		.timing_linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 984,
 				.frame_length_lines_min = 2712,
@@ -482,7 +482,7 @@ static const struct ar0822_mode ar0822_modes_24_960[] = {
 			.width = 3840,
 			.height = 2160,
 		},
-		.timing_no_hdr = {
+		.timing_linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1782,
 				.frame_length_lines_min = 2184,
@@ -885,7 +885,7 @@ ar0822_get_timing(struct ar0822 *sensor, const struct ar0822_mode *mode,
 	if (sensor->hdr_mode->val)
 		return &mode->timing_hdr[sensor->hw_config.lane_mode];
 
-	return &mode->timing_no_hdr[sensor->hw_config.lane_mode][bit_depth_id];
+	return &mode->timing_linear[sensor->hw_config.lane_mode][bit_depth_id];
 }
 
 static void ar0822_set_framing_limits(struct ar0822 *sensor,
@@ -1048,7 +1048,7 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 	int ret;
 
 	/* Seed limits from default mode, state and controls do not exist yet */
-	timing = &mode->timing_no_hdr[sensor->hw_config.lane_mode]
+	timing = &mode->timing_linear[sensor->hw_config.lane_mode]
 				     [AR0822_BIT_DEPTH_ID_10BIT];
 
 	ret = v4l2_ctrl_handler_init(ctrl_hdlr, 16);
