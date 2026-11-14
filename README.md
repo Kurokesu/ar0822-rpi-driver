@@ -171,16 +171,10 @@ All modes run at 960 Mbps/lane.
 
 ## eHDR (experimental)
 
-AR0822 features an on-sensor HDR mode that expands dynamic range up to 120 dB by combining three exposures within sensor using the MEC algorithm. To reduce bandwidth requirements, linearized 20-bit HDR signal is companded to a 12-bit output.
+AR0822 features an on-sensor HDR mode that expands dynamic range up to 96 dB by combining 2 exposures within sensor using MEC algorithm. To reduce bandwidth requirements, linearized 16-bit HDR signal is companded to a 12-bit output.
 
 > [!IMPORTANT]
-> libcamera pipeline is designed for linear image data from sensor. Kurokesu's fork HDR implementation is experimental. Companded data may show color shifts due to compression.
-
-Due to exposure range limitations, running at maximum fps with current PIXCLK configuration reduces maximum exposure drastically.
-
-For instance, running 4K @ 30 fps results in maximum exposure T1 ≈ 10.26 ms, while running 4K @ 28.8 fps results in T1 ≈ 30.4 ms (right at internal delay buffer limit).
-
-Consider reducing framerate slightly when larger exposure range is desired. This will be addressed in future driver revisions.
+> libcamera pipeline is designed for linear image data from sensor. Kurokesu's libcamera fork decompands eHDR data on Pi 5. Pi 4 ISP has no decompanding, so colors there are approximate.
 
 eHDR mode is enabled by appending `--hdr` to `rpicam` commands.
 
@@ -194,8 +188,8 @@ rpicam-hello --list-cameras --hdr
 Available cameras
 -----------------
 0 : ar0822 [3840x2160 12-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0822@10)
-    Modes: 'SGRBG12_CSI2P' : 1920x1080 [48.04 fps - (0, 0)/3840x2160 crop]
-                             3840x2160 [30.01 fps - (0, 0)/3840x2160 crop]
+    Modes: 'SGRBG12_CSI2P' : 1920x1080 [60.01 fps - (0, 0)/3840x2160 crop]
+                             3840x2160 [30.00 fps - (0, 0)/3840x2160 crop]
 ```
 
 ## Build from source
