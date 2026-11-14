@@ -142,6 +142,27 @@ dtoverlay=ar0822,4lane
 > [!WARNING]
 > Before using `4lane`, confirm your camera port actually supports 4-lane MIPI CSI. Not all Raspberry Pi models and carrier boards provide 4-lane MIPI CSI on both ports.
 
+#### Output formats
+
+All modes run at 960 Mbps/lane.
+
+| Lanes | Bit depth | Width | Height | Max FPS |
+|---|---|---|---|---|
+| **Full HD 1080p (2×2 binned)** | | | | |
+| 2 | 10 | 1920 | 1080 | 78.7 fps |
+| 2 | 12 | 1920 | 1080 | 66.6 fps |
+| 2 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
+| 4 | 10 | 1920 | 1080 | 120.1 fps |
+| 4 | 12 | 1920 | 1080 | 120.2 fps |
+| 4 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
+| **4K 2160p (full resolution)** | | | | |
+| 2 | 10 | 3840 | 2160 | 21.3 fps |
+| 2 | 12 | 3840 | 2160 | 17.9 fps |
+| 2 | 12 (eHDR) | 3840 | 2160 | 16.9 fps |
+| 4 | 10 | 3840 | 2160 | 40.0 fps |
+| 4 | 12 | 3840 | 2160 | 33.9 fps |
+| 4 | 12 (eHDR) | 3840 | 2160 | 30.0 fps |
+
 > [!TIP]
 > Options can be combined. Example (cam0, 4-lane):
 > ```ini
