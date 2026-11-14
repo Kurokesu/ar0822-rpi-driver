@@ -188,6 +188,7 @@
 #define AR0822_REG_T4_NOISE_FLOOR3 CCI_REG16(0x556A)
 #define AR0822_REG_T4_NOISE_GAIN_THRESHOLD1 CCI_REG16(0x556C)
 #define AR0822_REG_SENSOR_GAIN CCI_REG16(0x5900)
+#define AR0822_REG_SENSOR_GAIN_T2 CCI_REG16(0x5902)
 #define AR0822_REG_SENSOR_GAIN_TABLE_SEL CCI_REG16(0x5914)
 #define AR0822_REG_MIPI_PER_DESKEW_PAT_WIDTH CCI_REG16(0x5930)
 
@@ -973,8 +974,11 @@ static int ar0822_set_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_ANALOGUE_GAIN:
 		dev_dbg(sensor->dev, "%s: AR0822_REG_SENSOR_GAIN %d\n",
 			__func__, ctrl->val);
-		ret = cci_write(sensor->regmap, AR0822_REG_SENSOR_GAIN,
-				ctrl->val, NULL);
+		cci_write(sensor->regmap, AR0822_REG_SENSOR_GAIN, ctrl->val,
+			  &ret);
+		if (sensor->hdr_mode->val)
+			cci_write(sensor->regmap, AR0822_REG_SENSOR_GAIN_T2,
+				  ctrl->val, &ret);
 		break;
 	case V4L2_CID_HFLIP:
 	case V4L2_CID_VFLIP:
