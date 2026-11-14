@@ -47,11 +47,9 @@
 #define AR0822_EXPOSURE_STEP 1
 #define AR0822_EXPOSURE_MARGIN 4
 
-/*
- * Maximum exposure in HDR mode that respects T2+2*T3<=144 delay buffer rule.
- * Assuming default 16x integration time ratios.
- */
-#define AR0822_EXPOSURE_HDR_MAX 2048
+#define AR0822_EXPOSURE_HDR_RATIO 16
+#define AR0822_EXPOSURE_HDR_MARGIN 35
+#define AR0822_EXPOSURE_HDR_MAX (144 * AR0822_EXPOSURE_HDR_RATIO)
 
 #define AR0822_ANA_GAIN_MIN 0
 #define AR0822_ANA_GAIN_MAX 119
@@ -70,7 +68,7 @@
 #define AR0822_IMAGE_ORIENTATION_VFLIP_BIT 1
 
 #define AR0822_DATA_FORMAT_RAW_LIN 12 /* ADC raw data size in bits (linear) */
-#define AR0822_DATA_FORMAT_RAW_HDR 20 /* ADC raw data size in bits (HDR) */
+#define AR0822_DATA_FORMAT_RAW_HDR 16 /* ADC raw data size in bits (HDR) */
 
 #define AR0822_TEST_PATTERN_DISABLED 0
 #define AR0822_TEST_PATTERN_SOLID_COLOR 1
@@ -751,18 +749,18 @@ static const struct cci_reg_sequence ar0822_regs_mfr_hdr[] = {
 /* clang-format on */
 
 static const struct cci_reg_sequence ar0822_regs_hdr[] = {
-	{ AR0822_REG_OC_LUT_00, 0x2000 },
-	{ AR0822_REG_OC_LUT_01, 0x3450 },
-	{ AR0822_REG_OC_LUT_02, 0x48A0 },
-	{ AR0822_REG_OC_LUT_03, 0x5CF0 },
-	{ AR0822_REG_OC_LUT_04, 0x7140 },
-	{ AR0822_REG_OC_LUT_05, 0x8590 },
-	{ AR0822_REG_OC_LUT_06, 0x99E0 },
-	{ AR0822_REG_OC_LUT_07, 0xAE30 },
-	{ AR0822_REG_OC_LUT_08, 0xC280 },
-	{ AR0822_REG_OC_LUT_09, 0xD6D0 },
-	{ AR0822_REG_OC_LUT_10, 0xEB20 },
-	{ AR0822_REG_OC_LUT_11, 0xFF70 },
+	{ AR0822_REG_OC_LUT_00, 0x0200 },
+	{ AR0822_REG_OC_LUT_01, 0x0400 },
+	{ AR0822_REG_OC_LUT_02, 0x0800 },
+	{ AR0822_REG_OC_LUT_03, 0x1000 },
+	{ AR0822_REG_OC_LUT_04, 0x2000 },
+	{ AR0822_REG_OC_LUT_05, 0x4000 },
+	{ AR0822_REG_OC_LUT_06, 0x6000 },
+	{ AR0822_REG_OC_LUT_07, 0x8000 },
+	{ AR0822_REG_OC_LUT_08, 0xA000 },
+	{ AR0822_REG_OC_LUT_09, 0xC000 },
+	{ AR0822_REG_OC_LUT_10, 0xE000 },
+	{ AR0822_REG_OC_LUT_11, 0xFFFF },
 	{ AR0822_REG_T2_PIX_DEF_ID2, 0x37C3 },
 	{ AR0822_REG_T2_NOISE_GAIN_THRESHOLD0, 0x0149 },
 	{ AR0822_REG_T2_NOISE_GAIN_THRESHOLD1, 0x044D },
@@ -787,8 +785,8 @@ static const struct cci_reg_sequence ar0822_regs_hdr[] = {
 	{ AR0822_REG_HDR_CONTROL3, 0x2001 }, /* default */
 	{ AR0822_REG_T3_STR_END_DEC_TH_MSB, 0x0F0F },
 	{ AR0822_REG_COMPANDING, 0x0001 },
-	{ AR0822_REG_OPERATION_MODE_CTRL, 0x0008 }, /* override common */
-	{ AR0822_REG_DIGITAL_CTRL, 0x013E }, /* override common */
+	{ AR0822_REG_OPERATION_MODE_CTRL, 0x0004 }, /* 2 exposures */
+	{ AR0822_REG_DIGITAL_CTRL, 0x013D }, /* 2 exposures */
 	{ AR0822_REG_EXPOSURE_RATIO, 0x0044 }, /* 16x */
 	{ AR0822_REG_SENSOR_GAIN_TABLE_SEL, 0x4006 }, /* select gain table 1 */
 };
@@ -859,29 +857,17 @@ static void ar0822_adjust_exposure_range(struct ar0822 *sensor,
 
 	if (sensor->hdr_mode->val) {
 		/*
-		 * Limit exposure range ensuring fixed FPS based on frame length lines.
-		 * Calculate sensor internal vblank (not v4l2) based on output rows.
-		 * With 4 embedded data rows enabled, output rows amount
-		 * is 2174 @ 4k and 1092 @ 1080p.
-		 * Following HDR exposure limit calculations assume that T1/T2 and
-		 * T2/T3 ratios are at their default 16x settings.
+		 * Limit exposure ensuring fixed FPS: T1+T2+margin <= fll,
+		 * T2+margin <= fll-height and T1 within delay buffer.
 		 */
-		u16 rows = (mode->height == 2160) ? 2174 : 1092;
-		u32 vblank = frame_length_lines - rows;
-		u32 fll_limit;
+		int ratio = AR0822_EXPOSURE_HDR_RATIO;
+		int exp_lines = frame_length_lines - AR0822_EXPOSURE_HDR_MARGIN;
+		int idle_lines = exp_lines - mode->height;
 
-		/* Calculate exposure limit for T2+T3 <= vblank-28 */
-		exposure_max = ((vblank - 28) * 256) / 17;
-
-		/* Calculate exposure limit for T1+T2+T3+28 <= fll */
-		fll_limit = ((frame_length_lines - 28) * 256) / 273;
-
-		if (exposure_max > fll_limit)
-			exposure_max = fll_limit;
-
-		/* Ensure delay buffers are not exceeded T2+2*T3 <= 144 */
-		if (exposure_max > AR0822_EXPOSURE_HDR_MAX)
-			exposure_max = AR0822_EXPOSURE_HDR_MAX;
+		exposure_max = min3(exp_lines * ratio / (ratio + 1),
+				    idle_lines * ratio,
+				    AR0822_EXPOSURE_HDR_MAX);
+		exposure_max = max(exposure_max, AR0822_EXPOSURE_MIN);
 	} else {
 		exposure_max = frame_length_lines - AR0822_EXPOSURE_MARGIN;
 	}
