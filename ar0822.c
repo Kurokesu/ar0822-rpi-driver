@@ -1967,8 +1967,7 @@ static void ar0822_remove(struct i2c_client *client)
 
 static int ar0822_runtime_resume(struct device *dev)
 {
-	struct i2c_client *client = to_i2c_client(dev);
-	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct v4l2_subdev *sd = dev_get_drvdata(dev);
 	struct ar0822 *sensor = to_ar0822(sd);
 
 	return ar0822_power_on(sensor);
@@ -1976,8 +1975,7 @@ static int ar0822_runtime_resume(struct device *dev)
 
 static int ar0822_runtime_suspend(struct device *dev)
 {
-	struct i2c_client *client = to_i2c_client(dev);
-	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct v4l2_subdev *sd = dev_get_drvdata(dev);
 	struct ar0822 *sensor = to_ar0822(sd);
 
 	ar0822_power_off(sensor);
