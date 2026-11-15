@@ -119,9 +119,11 @@ rpicam-still -o test.jpg
 `ar0822` overlay supports comma-separated options to override defaults:
 
 | option | description | default |
-|--------|-------------|----------|
-| `cam0` | Use cam0 port instead of cam1 | cam1 |
-| `4lane` | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
+|--------|-------------|---------|
+| [`cam0`](#cam0) | Use cam0 port instead of cam1 | cam1 |
+| [`4lane`](#4lane) | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
+| `rotation=<deg>` | Sensor mounting rotation | 0 |
+| `orientation=<n>` | Camera orientation (0 front, 1 back, 2 external) | 2 |
 
 ### cam0
 
