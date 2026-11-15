@@ -215,23 +215,37 @@ If driver was installed from apt archive previously, remove it first:
 sudo apt remove ar0822-rpi-dkms
 ```
 
-Run setup script:
+Run install script:
 
 ```bash
-sudo ./setup.sh
+sudo ./install.sh
 ```
 
 Camera stack, boot configuration and verification follow [Install](#install). Skip `ar0822-rpi-dkms` there, only `rpicam-apps` is needed. To build `libcamera` and `rpicam-apps` from source as well, see [libcamera/BUILDING.md](https://github.com/Kurokesu/libcamera/blob/kurokesu/BUILDING.md).
+
+Run uninstall script to remove driver:
+
+```bash
+sudo ./uninstall.sh
+```
+
+*`uninstall.sh` removes every `ar0822` version installed from source.*
+
+Remove `dtoverlay=ar0822` from `/boot/firmware/config.txt`, then reboot.
 
 ## Migrating from a source install
 
 One-time cleanup before first apt install.
 
-Remove `ar0822` driver modules installed by `setup.sh`:
+Remove `ar0822` driver installed from source:
 
 ```bash
-dkms status | grep ar0822 | cut -d, -f1 | sort -u | xargs -rI{} sudo dkms remove {} --all
+cd ~/ar0822-rpi-driver
+git pull
+sudo ./uninstall.sh
 ```
+
+*`uninstall.sh` ships with 0.2.0 and later.*
 
 Source-built `libcamera` and `rpicam-apps` install to `/usr/local` and shadow packaged binaries. Remove them:
 
