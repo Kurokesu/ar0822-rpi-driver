@@ -1356,7 +1356,7 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 	}
 
 	if (sensor->hdr_mode->val) {
-		dev_info(sensor->dev, "Initializing hdr mode\n");
+		dev_dbg(sensor->dev, "Initializing hdr mode\n");
 
 		ret = cci_multi_reg_write(sensor->regmap, ar0822_regs_hdr,
 					  ARRAY_SIZE(ar0822_regs_hdr), NULL);
