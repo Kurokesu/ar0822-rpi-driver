@@ -10,7 +10,7 @@ DRV_SRC   := $(wildcard *.c)
 DRV_NAME  := $(shell grep '^BUILT_MODULE_NAME=' dkms.conf | cut -d'"' -f2)
 DRV_VER   := $(shell grep '^PACKAGE_VERSION=' dkms.conf | cut -d'"' -f2)
 DTS       := $(wildcard *-overlay.dts)
-DTBO      := $(DRV_NAME).dtbo
+DTBO      := $(DTS:-overlay.dts=.dtbo)
 DTC       := dtc
 DTC_FLAGS := -Wno-interrupts_property -Wno-unit_address_vs_reg -@ -I dts -O dtb
 
