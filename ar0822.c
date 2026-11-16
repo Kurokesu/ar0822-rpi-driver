@@ -319,7 +319,7 @@ static const struct cci_reg_sequence ar0822_pll_config_24_640[] = {
 	{ AR0822_REG_OP_SYS_CLK_DIV, 0x0002 },
 };
 
-static const struct cci_reg_sequence ar0822_1080p_config[] = {
+static const struct cci_reg_sequence ar0822_mode_config_1080p[] = {
 	{ AR0822_REG_X_ADDR_START, 8 },
 	{ AR0822_REG_X_ADDR_END, 3847 },
 	{ AR0822_REG_Y_ADDR_START, 8 },
@@ -331,7 +331,7 @@ static const struct cci_reg_sequence ar0822_1080p_config[] = {
 	{ AR0822_REG_READ_MODE, 0x3004 }, /* binning & 4 embedded data rows */
 };
 
-static const struct cci_reg_sequence ar0822_4k_config[] = {
+static const struct cci_reg_sequence ar0822_mode_config_4k[] = {
 	{ AR0822_REG_X_ADDR_START, 8 },
 	{ AR0822_REG_X_ADDR_END, 3847 },
 	{ AR0822_REG_Y_ADDR_START, 8 },
@@ -354,8 +354,8 @@ static const struct ar0822_mode ar0822_modes[AR0822_NUM_MODES] = {
 			.height = 2160,
 		},
 		.reg_sequence = {
-			.regs = ar0822_1080p_config,
-			.num_regs = ARRAY_SIZE(ar0822_1080p_config),
+			.regs = ar0822_mode_config_1080p,
+			.num_regs = ARRAY_SIZE(ar0822_mode_config_1080p),
 		},
 	},
 	[AR0822_MODE_ID_4K] = {
@@ -368,8 +368,8 @@ static const struct ar0822_mode ar0822_modes[AR0822_NUM_MODES] = {
 			.height = 2160,
 		},
 		.reg_sequence = {
-			.regs = ar0822_4k_config,
-			.num_regs = ARRAY_SIZE(ar0822_4k_config),
+			.regs = ar0822_mode_config_4k,
+			.num_regs = ARRAY_SIZE(ar0822_mode_config_4k),
 		},
 	},
 };
