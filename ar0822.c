@@ -285,17 +285,17 @@ struct ar0822 {
 
 enum ar0822_extclk_link_id {
 	AR0822_EXTCLK_LINK_ID_24_480 = 0,
-	AR0822_EXTCLK_LINK_ID_24_960,
+	AR0822_EXTCLK_LINK_ID_24_640,
 };
 
 static const u64 ar0822_extclk_frequencies[] = {
 	[AR0822_EXTCLK_LINK_ID_24_480] = 24000000,
-	[AR0822_EXTCLK_LINK_ID_24_960] = 24000000,
+	[AR0822_EXTCLK_LINK_ID_24_640] = 24000000,
 };
 
 static const s64 ar0822_link_frequencies[] = {
 	[AR0822_EXTCLK_LINK_ID_24_480] = 480000000,
-	[AR0822_EXTCLK_LINK_ID_24_960] = 960000000,
+	[AR0822_EXTCLK_LINK_ID_24_640] = 640000000,
 };
 
 static const u32 ar0822_format_codes[AR0822_NUM_BIT_DEPTHS] = {
@@ -311,11 +311,11 @@ static const struct cci_reg_sequence ar0822_pll_config_24_480[] = {
 	{ AR0822_REG_OP_SYS_CLK_DIV, 0x0004 },
 };
 
-static const struct cci_reg_sequence ar0822_pll_config_24_960[] = {
-	{ AR0822_REG_PLL_MULTIPLIER, 0x0050 },
-	{ AR0822_REG_PRE_PLL_CLK_DIV, 0x0001 },
+static const struct cci_reg_sequence ar0822_pll_config_24_640[] = {
+	{ AR0822_REG_PLL_MULTIPLIER, 0x00A0 },
+	{ AR0822_REG_PRE_PLL_CLK_DIV, 0x0003 },
 	{ AR0822_REG_VT_SYS_CLK_DIV, 0x0002 },
-	{ AR0822_REG_VT_PIX_CLK_DIV, 0x0006 },
+	{ AR0822_REG_VT_PIX_CLK_DIV, 0x0004 },
 	{ AR0822_REG_OP_SYS_CLK_DIV, 0x0002 },
 };
 
@@ -430,7 +430,7 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 	},
 };
 
-static const struct ar0822_mode ar0822_modes_24_960[] = {
+static const struct ar0822_mode ar0822_modes_24_640[] = {
 	{
 		.width = 1920,
 		.height = 1080,
@@ -442,30 +442,30 @@ static const struct ar0822_mode ar0822_modes_24_960[] = {
 		},
 		.timing_linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck_min = 984,
-				.frame_length_lines_min = 2712,
+				.line_length_pck_min = 1400,
+				.frame_length_lines_min = 1122,
 			},
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_12BIT] = {
-				.line_length_pck_min = 1146,
-				.frame_length_lines_min = 2328,
+				.line_length_pck_min = 1648,
+				.frame_length_lines_min = 1122,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck_min = 792,
-				.frame_length_lines_min = 3360,
+				.line_length_pck_min = 800,
+				.frame_length_lines_min = 1122,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_12BIT] = {
-				.line_length_pck_min = 792,
-				.frame_length_lines_min = 3360,
+				.line_length_pck_min = 928,
+				.frame_length_lines_min = 1122,
 			},
 		},
 		.timing_hdr = {
-			[AR0822_LANE_MODE_ID_2] = { /* todo */
-				.line_length_pck_min = 2376,
-				.frame_length_lines_min = 2296,
+			[AR0822_LANE_MODE_ID_2] = {
+				.line_length_pck_min = 2142,
+				.frame_length_lines_min = 1245,
 			},
 			[AR0822_LANE_MODE_ID_4] = {
-				.line_length_pck_min = 792, /* todo */
-				.frame_length_lines_min = 3360, /* todo */
+				.line_length_pck_min = 2140,
+				.frame_length_lines_min = 1246,
 			},
 		},
 		.reg_sequence = {
@@ -484,30 +484,30 @@ static const struct ar0822_mode ar0822_modes_24_960[] = {
 		},
 		.timing_linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck_min = 1782,
-				.frame_length_lines_min = 2184,
+				.line_length_pck_min = 2600,
+				.frame_length_lines_min = 2206,
 			},
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_12BIT] = {
-				.line_length_pck_min = 2106,
-				.frame_length_lines_min = 2184,
+				.line_length_pck_min = 3088,
+				.frame_length_lines_min = 2206,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck_min = 982,
-				.frame_length_lines_min = 2672,
+				.line_length_pck_min = 1600,
+				.frame_length_lines_min = 2206,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_12BIT] = {
-				.line_length_pck_min = 1146,
-				.frame_length_lines_min = 2288,
+				.line_length_pck_min = 1648,
+				.frame_length_lines_min = 2206,
 			},
 		},
 		.timing_hdr = {
-			[AR0822_LANE_MODE_ID_2] = { /* todo */
-				.line_length_pck_min = 2376,
-				.frame_length_lines_min = 2296,
+			[AR0822_LANE_MODE_ID_2] = {
+				.line_length_pck_min = 3088,
+				.frame_length_lines_min = 2338,
 			},
-			[AR0822_LANE_MODE_ID_4] = { /* todo */
-				.line_length_pck_min = 2372,
-				.frame_length_lines_min = 2248,
+			[AR0822_LANE_MODE_ID_4] = {
+				.line_length_pck_min = 2140,
+				.frame_length_lines_min = 2492,
 			},
 		},
 		.reg_sequence = {
@@ -539,29 +539,25 @@ static const struct cci_reg_sequence ar0822_mipi_timing_24_480_12bit[] = {
 	{ AR0822_REG_MIPI_F1_PDT, 0x122C },
 };
 
-static const struct cci_reg_sequence ar0822_mipi_timing_24_960_10bit[] = {
-	{ AR0822_REG_FRAME_PREAMBLE, 0x00D9 },
-	{ AR0822_REG_LINE_PREAMBLE, 0x008D },
-	{ AR0822_REG_MIPI_TIMING_0, 0xA3D0 },
-	{ AR0822_REG_MIPI_TIMING_1, 0x9553 },
-	{ AR0822_REG_MIPI_TIMING_2, 0xF0D1 },
-	{ AR0822_REG_MIPI_TIMING_3, 0x0598 },
-	{ AR0822_REG_MIPI_TIMING_4, 0x1D13 },
-	{ AR0822_REG_MIPI_DESKEW_PAT_WIDTH, 0x0B3A },
-	{ AR0822_REG_MIPI_PER_DESKEW_PAT_WIDTH, 0x0107 },
+static const struct cci_reg_sequence ar0822_mipi_timing_24_640_10bit[] = {
+	{ AR0822_REG_FRAME_PREAMBLE, 0x009D },
+	{ AR0822_REG_LINE_PREAMBLE, 0x0068 },
+	{ AR0822_REG_MIPI_TIMING_0, 0x72CB },
+	{ AR0822_REG_MIPI_TIMING_1, 0x638D },
+	{ AR0822_REG_MIPI_TIMING_2, 0xA0CD },
+	{ AR0822_REG_MIPI_TIMING_3, 0x0410 },
+	{ AR0822_REG_MIPI_TIMING_4, 0x138D },
 	{ AR0822_REG_MIPI_F1_PDT, 0x122B },
 };
 
-static const struct cci_reg_sequence ar0822_mipi_timing_24_960_12bit[] = {
-	{ AR0822_REG_FRAME_PREAMBLE, 0x00B8 },
-	{ AR0822_REG_LINE_PREAMBLE, 0x0079 },
-	{ AR0822_REG_MIPI_TIMING_0, 0x830E },
-	{ AR0822_REG_MIPI_TIMING_1, 0x8451 },
-	{ AR0822_REG_MIPI_TIMING_2, 0xD0CE },
-	{ AR0822_REG_MIPI_TIMING_3, 0x0494 },
-	{ AR0822_REG_MIPI_TIMING_4, 0x1810 },
-	{ AR0822_REG_MIPI_DESKEW_PAT_WIDTH, 0x0B23 },
-	{ AR0822_REG_MIPI_PER_DESKEW_PAT_WIDTH, 0x00EB },
+static const struct cci_reg_sequence ar0822_mipi_timing_24_640_12bit[] = {
+	{ AR0822_REG_FRAME_PREAMBLE, 0x0088 },
+	{ AR0822_REG_LINE_PREAMBLE, 0x005B },
+	{ AR0822_REG_MIPI_TIMING_0, 0x624A },
+	{ AR0822_REG_MIPI_TIMING_1, 0x630B },
+	{ AR0822_REG_MIPI_TIMING_2, 0x90CB },
+	{ AR0822_REG_MIPI_TIMING_3, 0x038E },
+	{ AR0822_REG_MIPI_TIMING_4, 0x100B },
 	{ AR0822_REG_MIPI_F1_PDT, 0x122C },
 };
 
@@ -591,24 +587,24 @@ static const struct ar0822_pll_config ar0822_pll_configs[] = {
 	},
 	{
 		.freq_link =
-			&ar0822_link_frequencies[AR0822_EXTCLK_LINK_ID_24_960],
+			&ar0822_link_frequencies[AR0822_EXTCLK_LINK_ID_24_640],
 		.freq_extclk =
-			&ar0822_extclk_frequencies[AR0822_EXTCLK_LINK_ID_24_960],
+			&ar0822_extclk_frequencies[AR0822_EXTCLK_LINK_ID_24_640],
 		.pixel_rate = AR0822_PIXEL_RATE,
-		.modes = ar0822_modes_24_960,
-		.num_modes = ARRAY_SIZE(ar0822_modes_24_960),
+		.modes = ar0822_modes_24_640,
+		.num_modes = ARRAY_SIZE(ar0822_modes_24_640),
 		.regs_pll = {
-			.regs = ar0822_pll_config_24_960,
-			.num_regs = ARRAY_SIZE(ar0822_pll_config_24_960),
+			.regs = ar0822_pll_config_24_640,
+			.num_regs = ARRAY_SIZE(ar0822_pll_config_24_640),
 		},
 		.regs_mipi = {
 			[AR0822_BIT_DEPTH_ID_10BIT] = {
-				.regs = ar0822_mipi_timing_24_960_10bit,
-				.num_regs = ARRAY_SIZE(ar0822_mipi_timing_24_960_10bit),
+				.regs = ar0822_mipi_timing_24_640_10bit,
+				.num_regs = ARRAY_SIZE(ar0822_mipi_timing_24_640_10bit),
 			},
 			[AR0822_BIT_DEPTH_ID_12BIT] = {
-				.regs = ar0822_mipi_timing_24_960_12bit,
-				.num_regs = ARRAY_SIZE(ar0822_mipi_timing_24_960_12bit),
+				.regs = ar0822_mipi_timing_24_640_12bit,
+				.num_regs = ARRAY_SIZE(ar0822_mipi_timing_24_640_12bit),
 			},
 		},
 	},
