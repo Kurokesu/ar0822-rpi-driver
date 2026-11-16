@@ -189,7 +189,7 @@ dtoverlay=ar0822,link-frequency=480000000
 *\* 46.0 fps on Pi 5, which processes up to 390 Mpix/s.*
 
 > [!NOTE]
-> Above 60 fps, see [Capture high framerate video](https://www.raspberrypi.com/documentation/accessories/camera-software.html#capture-high-framerate-video). On Pi 4, 4K is limited to 30 fps and 1080p needs `--denoise cdn_off` above 60 fps.
+> Above 60 fps, see [Capture high framerate video](https://www.raspberrypi.com/documentation/accessories/camera-software.html#capture-high-framerate-video). On Pi 4, libcamera delivers 4K up to 30 fps and 1080p needs `--denoise cdn_off` above 60 fps.
 
 > [!TIP]
 > Options can be combined. Example (cam0, 4-lane):
