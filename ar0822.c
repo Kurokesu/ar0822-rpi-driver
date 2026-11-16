@@ -195,6 +195,7 @@
 struct ar0822_timing {
 	unsigned int line_length_pck_min;
 	unsigned int frame_length_lines_min;
+	unsigned int frame_length_lines_def;
 };
 
 enum ar0822_lane_mode_id {
@@ -357,28 +358,34 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1812,
 				.frame_length_lines_min = 1122,
+				.frame_length_lines_def = 1122,
 			},
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 2142,
 				.frame_length_lines_min = 1122,
+				.frame_length_lines_def = 1122,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1012,
 				.frame_length_lines_min = 1316,
+				.frame_length_lines_def = 1316,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 1180,
 				.frame_length_lines_min = 1128,
+				.frame_length_lines_def = 1128,
 			},
 		},
 		.timing_hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 2142,
 				.frame_length_lines_min = 1245,
+				.frame_length_lines_def = 1245,
 			},
 			[AR0822_LANE_MODE_ID_4] = {
 				.line_length_pck_min = 2140,
 				.frame_length_lines_min = 1246,
+				.frame_length_lines_def = 1246,
 			},
 		},
 		.reg_sequence = {
@@ -399,28 +406,34 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 3412,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 4062,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1812,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 2140,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 		},
 		.timing_hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 4062,
 				.frame_length_lines_min = 2338,
+				.frame_length_lines_def = 2338,
 			},
 			[AR0822_LANE_MODE_ID_4] = {
 				.line_length_pck_min = 2140,
 				.frame_length_lines_min = 2492,
+				.frame_length_lines_def = 2492,
 			},
 		},
 		.reg_sequence = {
@@ -444,28 +457,34 @@ static const struct ar0822_mode ar0822_modes_24_640[] = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1400,
 				.frame_length_lines_min = 1122,
+				.frame_length_lines_def = 1122,
 			},
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 1648,
 				.frame_length_lines_min = 1122,
+				.frame_length_lines_def = 1122,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 800,
 				.frame_length_lines_min = 1122,
+				.frame_length_lines_def = 1667,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 928,
 				.frame_length_lines_min = 1122,
+				.frame_length_lines_def = 1437,
 			},
 		},
 		.timing_hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 2142,
 				.frame_length_lines_min = 1245,
+				.frame_length_lines_def = 1245,
 			},
 			[AR0822_LANE_MODE_ID_4] = {
 				.line_length_pck_min = 2140,
 				.frame_length_lines_min = 1246,
+				.frame_length_lines_def = 1246,
 			},
 		},
 		.reg_sequence = {
@@ -486,28 +505,34 @@ static const struct ar0822_mode ar0822_modes_24_640[] = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 2600,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 3088,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1600,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_12BIT] = {
 				.line_length_pck_min = 1648,
 				.frame_length_lines_min = 2206,
+				.frame_length_lines_def = 2206,
 			},
 		},
 		.timing_hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 3088,
 				.frame_length_lines_min = 2338,
+				.frame_length_lines_def = 2338,
 			},
 			[AR0822_LANE_MODE_ID_4] = {
 				.line_length_pck_min = 2140,
 				.frame_length_lines_min = 2492,
+				.frame_length_lines_def = 2492,
 			},
 		},
 		.reg_sequence = {
@@ -890,16 +915,17 @@ static void ar0822_set_framing_limits(struct ar0822 *sensor,
 {
 	const struct ar0822_timing *timing =
 		ar0822_get_timing(sensor, mode, bit_depth_id);
-	int hblank, vblank_min;
+	int hblank, vblank_def, vblank_min;
 
 	/* Update limits and set FPS to default */
 	vblank_min = timing->frame_length_lines_min - mode->height;
+	vblank_def = timing->frame_length_lines_def - mode->height;
 	__v4l2_ctrl_modify_range(sensor->vblank, vblank_min,
 				 AR0822_FLL_MAX - mode->height,
-				 sensor->vblank->step, vblank_min);
+				 sensor->vblank->step, vblank_def);
 
 	/* Setting this will adjust the exposure limits as well */
-	__v4l2_ctrl_s_ctrl(sensor->vblank, vblank_min);
+	__v4l2_ctrl_s_ctrl(sensor->vblank, vblank_def);
 
 	/* Virtual, negative, keeps width + hblank at true line length */
 	hblank = timing->line_length_pck_min - mode->width;
@@ -1040,7 +1066,7 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 	struct v4l2_ctrl *ctrl;
 	u8 link_freq_id;
 	u32 exposure_max;
-	int hblank, vblank_min;
+	int hblank, vblank_def, vblank_min;
 	int ret;
 
 	/* Seed limits from default mode, state and controls do not exist yet */
@@ -1078,13 +1104,14 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 
 	/* Vertical blanking control */
 	vblank_min = timing->frame_length_lines_min - mode->height;
+	vblank_def = timing->frame_length_lines_def - mode->height;
 	sensor->vblank = v4l2_ctrl_new_std(ctrl_hdlr, &ar0822_ctrl_ops,
 					   V4L2_CID_VBLANK, vblank_min,
 					   AR0822_FLL_MAX - mode->height,
-					   AR0822_VBLANK_STEP, vblank_min);
+					   AR0822_VBLANK_STEP, vblank_def);
 
 	/* Exposure */
-	exposure_max = timing->frame_length_lines_min - AR0822_EXPOSURE_MARGIN;
+	exposure_max = timing->frame_length_lines_def - AR0822_EXPOSURE_MARGIN;
 	sensor->exposure = v4l2_ctrl_new_std(ctrl_hdlr, &ar0822_ctrl_ops,
 					     V4L2_CID_EXPOSURE,
 					     AR0822_EXPOSURE_MIN, exposure_max,
