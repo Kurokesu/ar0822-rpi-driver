@@ -25,7 +25,6 @@
 #define AR0822_PIXEL_RATE 160000000
 #define AR0822_REG_ADDRESS_BITS 16
 
-#define AR0822_EMBEDDED_DATA_ENABLED
 /* 3840 + padding bytes (every 3rd byte) */
 #define AR0822_EMBEDDED_LINE_WIDTH 5760
 #define AR0822_NUM_EMBEDDED_LINES 4
@@ -252,9 +251,7 @@ struct ar0822_hw_config {
 
 enum pad_types {
 	IMAGE_PAD,
-#ifdef AR0822_EMBEDDED_DATA_ENABLED
 	METADATA_PAD,
-#endif /* AR0822_EMBEDDED_DATA_ENABLED */
 	NUM_PADS,
 };
 
@@ -644,10 +641,8 @@ static const struct cci_reg_sequence ar0822_regs_common[] = {
 	{ AR0822_REG_T1_NOISE_FLOOR3, 0x0004 },
 	{ AR0822_REG_PIX_DEF_ID, 0x0001 },
 	{ AR0822_REG_T1_PIX_DEF_ID, 0x11C1 },
-#ifdef AR0822_EMBEDDED_DATA_ENABLED
 	/* Enable embedded data */
 	{ AR0822_REG_SMIA_TEST, 0x0100 },
-#endif /* AR0822_EMBEDDED_DATA_ENABLED */
 	{ AR0822_REG_OPERATION_MODE_CTRL, 0x0001 },
 	/* Enable temperature sensor */
 	{ AR0822_REG_TEMPSENS1_CTRL_REG, 0x0011 },
@@ -1549,17 +1544,13 @@ static int ar0822_init_state(struct v4l2_subdev *sd,
 			.height = ar0822_modes[AR0822_MODE_ID_1080P].height,
 		},
 	};
-#ifdef AR0822_EMBEDDED_DATA_ENABLED
 	struct v4l2_subdev_format meta_fmt = {
 		.which = V4L2_SUBDEV_FORMAT_TRY,
 		.pad = METADATA_PAD,
 	};
-#endif /* AR0822_EMBEDDED_DATA_ENABLED */
 
 	ar0822_set_pad_format(sd, state, &fmt);
-#ifdef AR0822_EMBEDDED_DATA_ENABLED
 	ar0822_set_pad_format(sd, state, &meta_fmt);
-#endif /* AR0822_EMBEDDED_DATA_ENABLED */
 
 	return 0;
 }
@@ -1610,11 +1601,9 @@ static int ar0822_subdev_init(struct ar0822 *sensor)
 	sensor->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE |
 			    V4L2_SUBDEV_FL_HAS_EVENTS;
 	sensor->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
-
 	sensor->pad[IMAGE_PAD].flags = MEDIA_PAD_FL_SOURCE;
-#ifdef AR0822_EMBEDDED_DATA_ENABLED
 	sensor->pad[METADATA_PAD].flags = MEDIA_PAD_FL_SOURCE;
-#endif /* AR0822_EMBEDDED_DATA_ENABLED */
+
 	ret = media_entity_pads_init(&sensor->sd.entity, NUM_PADS, sensor->pad);
 	if (ret < 0) {
 		dev_err(sensor->dev, "failed to init entity pads: %d\n", ret);
