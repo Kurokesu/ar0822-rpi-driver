@@ -55,8 +55,9 @@
 #define AR0822_EXPOSURE_HDR_MAX (144 * AR0822_EXPOSURE_HDR_RATIO)
 
 #define AR0822_ANA_GAIN_MIN 0
-#define AR0822_ANA_GAIN_MAX 119
+#define AR0822_ANA_GAIN_MAX 64
 #define AR0822_ANA_GAIN_STEP 1
+#define AR0822_ANA_GAIN_HDR_MAX 48
 
 #define AR0822_MODEL_ID 0x0F56
 #define AR0822_REVISION_MIN 0x2303
@@ -274,6 +275,7 @@ struct ar0822 {
 	struct v4l2_ctrl *hflip;
 	struct v4l2_ctrl *vflip;
 	struct v4l2_ctrl *exposure;
+	struct v4l2_ctrl *gain;
 	struct v4l2_ctrl *hdr_mode;
 };
 
@@ -857,6 +859,18 @@ static void ar0822_adjust_exposure_range(struct ar0822 *sensor,
 				 exposure_max);
 }
 
+static void ar0822_adjust_gain_range(struct ar0822 *sensor)
+{
+	int gain_max = AR0822_ANA_GAIN_MAX;
+
+	if (sensor->hdr_mode->val)
+		gain_max = AR0822_ANA_GAIN_HDR_MAX;
+
+	__v4l2_ctrl_modify_range(sensor->gain, sensor->gain->minimum, gain_max,
+				 sensor->gain->step,
+				 sensor->gain->default_value);
+}
+
 static const struct ar0822_timing *
 ar0822_get_timing(struct ar0822 *sensor, const struct ar0822_mode *mode,
 		  enum ar0822_bit_depth_id bit_depth_id)
@@ -938,6 +952,7 @@ static int ar0822_set_ctrl(struct v4l2_ctrl *ctrl)
 			}
 
 			ar0822_set_framing_limits(sensor, mode, bit_depth_id);
+			ar0822_adjust_gain_range(sensor);
 		}
 	}
 
@@ -1093,9 +1108,11 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 					     exposure_max);
 
 	/* Analogue gain */
-	v4l2_ctrl_new_std(ctrl_hdlr, &ar0822_ctrl_ops, V4L2_CID_ANALOGUE_GAIN,
-			  AR0822_ANA_GAIN_MIN, AR0822_ANA_GAIN_MAX,
-			  AR0822_ANA_GAIN_STEP, AR0822_ANA_GAIN_MIN);
+	ctrl = v4l2_ctrl_new_std(ctrl_hdlr, &ar0822_ctrl_ops,
+				 V4L2_CID_ANALOGUE_GAIN, AR0822_ANA_GAIN_MIN,
+				 AR0822_ANA_GAIN_MAX, AR0822_ANA_GAIN_STEP,
+				 AR0822_ANA_GAIN_MIN);
+	sensor->gain = ctrl;
 
 	/* Horizontal flip */
 	sensor->hflip = v4l2_ctrl_new_std(ctrl_hdlr, &ar0822_ctrl_ops,
