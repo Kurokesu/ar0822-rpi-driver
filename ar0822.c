@@ -191,6 +191,11 @@ enum ar0822_bit_depth_id {
 	AR0822_NUM_BIT_DEPTHS,
 };
 
+struct ar0822_format_info {
+	u32 code;
+	u8 bpp;
+};
+
 struct ar0822_reg_sequence {
 	unsigned int num_regs;
 	const struct cci_reg_sequence *regs;
@@ -280,9 +285,15 @@ static const s64 ar0822_link_frequencies[] = {
 	[AR0822_EXTCLK_LINK_ID_24_640] = 640000000,
 };
 
-static const u32 ar0822_format_codes[AR0822_NUM_BIT_DEPTHS] = {
-	[AR0822_BIT_DEPTH_ID_10BIT] = MEDIA_BUS_FMT_SGRBG10_1X10,
-	[AR0822_BIT_DEPTH_ID_12BIT] = MEDIA_BUS_FMT_SGRBG12_1X12,
+static const struct ar0822_format_info ar0822_formats[AR0822_NUM_BIT_DEPTHS] = {
+	[AR0822_BIT_DEPTH_ID_10BIT] = {
+		.code = MEDIA_BUS_FMT_SGRBG10_1X10,
+		.bpp = 10,
+	},
+	[AR0822_BIT_DEPTH_ID_12BIT] = {
+		.code = MEDIA_BUS_FMT_SGRBG12_1X12,
+		.bpp = 12,
+	},
 };
 
 static const struct cci_reg_sequence ar0822_pll_config_24_480[] = {
@@ -786,16 +797,16 @@ static u32 ar0822_get_format_code(struct ar0822 *sensor, u32 code)
 
 	/* HDR streams 12-bit only */
 	if (sensor->hdr_mode->val)
-		return ar0822_format_codes[AR0822_BIT_DEPTH_ID_12BIT];
+		return ar0822_formats[AR0822_BIT_DEPTH_ID_12BIT].code;
 
 	for (i = 0; i < AR0822_NUM_BIT_DEPTHS; i++)
-		if (ar0822_format_codes[i] == code)
+		if (ar0822_formats[i].code == code)
 			break;
 
 	if (i >= AR0822_NUM_BIT_DEPTHS)
 		i = 0;
 
-	return ar0822_format_codes[i];
+	return ar0822_formats[i].code;
 }
 
 static int ar0822_get_bit_depth_id(u32 code,
@@ -807,7 +818,7 @@ static int ar0822_get_bit_depth_id(u32 code,
 		return -EINVAL;
 
 	for (i = 0; i < AR0822_NUM_BIT_DEPTHS; i++)
-		if (ar0822_format_codes[i] == code)
+		if (ar0822_formats[i].code == code)
 			break;
 
 	if (i >= AR0822_NUM_BIT_DEPTHS)
@@ -1159,25 +1170,6 @@ static int ar0822_stream_off(struct ar0822 *sensor)
 			 AR0822_MODE_SELECT_STREAM_OFF, NULL);
 }
 
-static int ar0822_get_bit_depth(enum ar0822_bit_depth_id id, u8 *bit_depth)
-{
-	if (!bit_depth)
-		return -EINVAL;
-
-	switch (id) {
-	case AR0822_BIT_DEPTH_ID_10BIT:
-		*bit_depth = 10;
-		break;
-	case AR0822_BIT_DEPTH_ID_12BIT:
-		*bit_depth = 12;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static inline int
 ar0822_reg_seq_write(struct regmap *regmap,
 		     const struct ar0822_reg_sequence *reg_sequence)
@@ -1192,14 +1184,6 @@ static int ar0822_config_pll(struct ar0822 *sensor,
 	const struct ar0822_reg_sequence *regs_mipi =
 		&sensor->pll_config->regs_mipi[bit_depth_id];
 	int ret;
-	u8 bit_depth;
-
-	ret = ar0822_get_bit_depth(bit_depth_id, &bit_depth);
-	if (ret < 0) {
-		dev_err(sensor->dev, "Unsupported bit depth id %d\n",
-			bit_depth_id);
-		return ret;
-	}
 
 	/* Configure PLL */
 	ret = ar0822_reg_seq_write(sensor->regmap,
@@ -1211,7 +1195,7 @@ static int ar0822_config_pll(struct ar0822 *sensor,
 
 	/* op_word_clk_div = output bit depth (bits) / 2 */
 	ret = cci_write(sensor->regmap, AR0822_REG_OP_WORD_CLK_DIV,
-			bit_depth / 2, NULL);
+			ar0822_formats[bit_depth_id].bpp / 2, NULL);
 	if (ret < 0) {
 		dev_err(sensor->dev,
 			"Failed to write AR0822_REG_OP_WORD_CLK_DIV: %d\n",
@@ -1234,13 +1218,8 @@ static int ar0822_config_serial_format(struct ar0822 *sensor,
 				       enum ar0822_bit_depth_id bit_depth_id)
 {
 	int ret;
-	u8 bit_depth;
 	u16 data_format = sensor->hdr_mode->val ? AR0822_DATA_FORMAT_RAW_HDR :
 						  AR0822_DATA_FORMAT_RAW_LIN;
-
-	ret = ar0822_get_bit_depth(bit_depth_id, &bit_depth);
-	if (ret < 0)
-		return ret;
 
 	ret = cci_write(sensor->regmap, AR0822_REG_SERIAL_FORMAT,
 			(0x0200 | sensor->hw_config.num_data_lanes), NULL);
@@ -1250,7 +1229,8 @@ static int ar0822_config_serial_format(struct ar0822 *sensor,
 	}
 
 	ret = cci_write(sensor->regmap, AR0822_REG_DATA_FORMAT_BITS,
-			((data_format << 8) | bit_depth), NULL);
+			((data_format << 8) | ar0822_formats[bit_depth_id].bpp),
+			NULL);
 
 	return ret;
 }
@@ -1427,12 +1407,12 @@ static int ar0822_enum_mbus_code(struct v4l2_subdev *sd,
 				return -EINVAL;
 
 			code->code =
-				ar0822_format_codes[AR0822_BIT_DEPTH_ID_12BIT];
+				ar0822_formats[AR0822_BIT_DEPTH_ID_12BIT].code;
 		} else {
 			if (code->index >= AR0822_NUM_BIT_DEPTHS)
 				return -EINVAL;
 
-			code->code = ar0822_format_codes[code->index];
+			code->code = ar0822_formats[code->index].code;
 		}
 	} else {
 		if (code->index > 0)
@@ -1584,7 +1564,7 @@ static int ar0822_init_state(struct v4l2_subdev *sd,
 		.which = V4L2_SUBDEV_FORMAT_TRY,
 		.pad = IMAGE_PAD,
 		.format = {
-			.code = ar0822_format_codes[0],
+			.code = ar0822_formats[0].code,
 			.width = sensor->pll_config->modes[0].width,
 			.height = sensor->pll_config->modes[0].height,
 		},
