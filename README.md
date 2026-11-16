@@ -9,10 +9,10 @@
 
 Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
 
-- 2-lane and 4-lane MIPI CSI-2 (up to 960 Mbps/lane)
+- 2-lane and 4-lane MIPI CSI-2 (up to 1280 Mbps/lane)
 - 10-bit and 12-bit RAW output
-- 3840×2160 @ 40 fps (full resolution)
-- 1920×1080 @ 120 fps (2×2 binning)
+- 3840×2160 @ 45 fps (full resolution)
+- 1920×1080 @ 178 fps (2×2 binning)
 
 ![Kurokesu camera modules connected to a Raspberry Pi 5.](https://raw.githubusercontent.com/Kurokesu/ar0822-rpi-driver/main/docs/kurokesu-on-pi.jpg)
 
@@ -96,10 +96,10 @@ Expected output (varies by lane configuration):
 Available cameras
 -----------------
 0 : ar0822 [3840x2160 12-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0822@10)
-    Modes: 'SGRBG10_CSI2P' : 1920x1080 [120.15 fps - (0, 0)/3840x2160 crop]
-                             3840x2160 [40.03 fps - (0, 0)/3840x2160 crop]
-           'SGRBG12_CSI2P' : 1920x1080 [120.21 fps - (0, 0)/3840x2160 crop]
-                             3840x2160 [33.89 fps - (0, 0)/3840x2160 crop]
+    Modes: 'SGRBG10_CSI2P' : 1920x1080 [178.25 fps - (0, 0)/3840x2160 crop]
+                             3840x2160 [45.33 fps - (0, 0)/3840x2160 crop]
+           'SGRBG12_CSI2P' : 1920x1080 [153.68 fps - (0, 0)/3840x2160 crop]
+                             3840x2160 [44.01 fps - (0, 0)/3840x2160 crop]
 ```
 
 Start live preview:
@@ -122,6 +122,7 @@ rpicam-still -o test.jpg
 |--------|-------------|---------|
 | [`cam0`](#cam0) | Use cam0 port instead of cam1 | cam1 |
 | [`4lane`](#4lane) | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
+| [`link-frequency=<Hz>`](#link-frequency) | Set MIPI CSI-2 link frequency (Hz) | 640000000 |
 | `rotation=<deg>` | Sensor mounting rotation | 0 |
 | `orientation=<n>` | Camera orientation (0 front, 1 back, 2 external) | 2 |
 
@@ -144,26 +145,48 @@ dtoverlay=ar0822,4lane
 > [!WARNING]
 > Before using `4lane`, confirm your camera port actually supports 4-lane MIPI CSI. Not all Raspberry Pi models and carrier boards provide 4-lane MIPI CSI on both ports.
 
+### link-frequency
+
+Supported link frequencies: 640 MHz (default) and 480 MHz.
+
+To set link frequency to 480 MHz, append `,link-frequency=480000000`:
+
+```ini
+dtoverlay=ar0822,link-frequency=480000000
+```
+
 #### Output formats
 
-All modes run at 960 Mbps/lane.
+| Link frequency | Data rate / lane | Lanes | Bit depth | Width | Height | Max FPS |
+|---|---|---|---|---|---|---|
+| **Full HD 1080p (2×2 binned)** | | | | | | |
+| 480 MHz | 960 Mbps | 2 | 10 | 1920 | 1080 | 78.7 fps |
+| 480 MHz | 960 Mbps | 2 | 12 | 1920 | 1080 | 66.6 fps |
+| 480 MHz | 960 Mbps | 2 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
+| 640 MHz | 1280 Mbps | 2 | 10 | 1920 | 1080 | 101.9 fps |
+| 640 MHz | 1280 Mbps | 2 | 12 | 1920 | 1080 | 86.5 fps |
+| 640 MHz | 1280 Mbps | 2 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
+| 480 MHz | 960 Mbps | 4 | 10 | 1920 | 1080 | 120.1 fps |
+| 480 MHz | 960 Mbps | 4 | 12 | 1920 | 1080 | 120.2 fps |
+| 480 MHz | 960 Mbps | 4 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
+| 640 MHz | 1280 Mbps | 4 | 10 | 1920 | 1080 | 178.3 fps |
+| 640 MHz | 1280 Mbps | 4 | 12 | 1920 | 1080 | 153.7 fps |
+| 640 MHz | 1280 Mbps | 4 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
+| **4K 2160p (full resolution)** | | | | | | |
+| 480 MHz | 960 Mbps | 2 | 10 | 3840 | 2160 | 21.3 fps |
+| 480 MHz | 960 Mbps | 2 | 12 | 3840 | 2160 | 17.9 fps |
+| 480 MHz | 960 Mbps | 2 | 12 (eHDR) | 3840 | 2160 | 16.9 fps |
+| 640 MHz | 1280 Mbps | 2 | 10 | 3840 | 2160 | 27.9 fps |
+| 640 MHz | 1280 Mbps | 2 | 12 | 3840 | 2160 | 23.5 fps |
+| 640 MHz | 1280 Mbps | 2 | 12 (eHDR) | 3840 | 2160 | 22.2 fps |
+| 480 MHz | 960 Mbps | 4 | 10 | 3840 | 2160 | 40.0 fps |
+| 480 MHz | 960 Mbps | 4 | 12 | 3840 | 2160 | 33.9 fps |
+| 480 MHz | 960 Mbps | 4 | 12 (eHDR) | 3840 | 2160 | 30.0 fps |
+| 640 MHz | 1280 Mbps | 4 | 10 | 3840 | 2160 | 45.3 fps |
+| 640 MHz | 1280 Mbps | 4 | 12 | 3840 | 2160 | 44.0 fps |
+| 640 MHz | 1280 Mbps | 4 | 12 (eHDR) | 3840 | 2160 | 30.0 fps |
 
-| Lanes | Bit depth | Width | Height | Max FPS |
-|---|---|---|---|---|
-| **Full HD 1080p (2×2 binned)** | | | | |
-| 2 | 10 | 1920 | 1080 | 78.7 fps |
-| 2 | 12 | 1920 | 1080 | 66.6 fps |
-| 2 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
-| 4 | 10 | 1920 | 1080 | 120.1 fps |
-| 4 | 12 | 1920 | 1080 | 120.2 fps |
-| 4 | 12 (eHDR) | 1920 | 1080 | 60.0 fps |
-| **4K 2160p (full resolution)** | | | | |
-| 2 | 10 | 3840 | 2160 | 21.3 fps |
-| 2 | 12 | 3840 | 2160 | 17.9 fps |
-| 2 | 12 (eHDR) | 3840 | 2160 | 16.9 fps |
-| 4 | 10 | 3840 | 2160 | 40.0 fps |
-| 4 | 12 | 3840 | 2160 | 33.9 fps |
-| 4 | 12 (eHDR) | 3840 | 2160 | 30.0 fps |
+*4K 10-bit on 4 lanes is limited to 45.3 fps by RP1, which processes up to 390 Mpix/s on Pi 5.*
 
 > [!TIP]
 > Options can be combined. Example (cam0, 4-lane):
