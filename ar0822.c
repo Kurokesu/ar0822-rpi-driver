@@ -683,25 +683,6 @@ static const struct cci_reg_sequence ar0822_regs_mfr_common[] = {
 static const struct cci_reg_sequence ar0822_regs_mfr_hdr[] = {
 	{ CCI_REG16(0x50A2), 0x3F2A }, /* override common */
 	{ CCI_REG16(0x50A4), 0x875A }, /* override common */
-	{ CCI_REG16(0x50A6), 0x030F },
-	{ CCI_REG16(0x50A6), 0x0F0F },
-	{ CCI_REG16(0x50A8), 0x030F },
-	{ CCI_REG16(0x50A8), 0x0F0F },
-	{ CCI_REG16(0x50AA), 0x030F },
-	{ CCI_REG16(0x50AA), 0x050F },
-	{ CCI_REG16(0x50AC), 0x0301 },
-	{ CCI_REG16(0x50AC), 0x0101 },
-	{ CCI_REG16(0x50AE), 0x0301 },
-	{ CCI_REG16(0x50AE), 0x0101 },
-	{ CCI_REG16(0x50B0), 0x0301 },
-	{ CCI_REG16(0x50B0), 0x0101 },
-	{ CCI_REG16(0x50B2), 0x03FF },
-	{ CCI_REG16(0x50B4), 0x030F },
-	{ CCI_REG16(0x50B4), 0x0F0F },
-	{ CCI_REG16(0x50B6), 0x030F },
-	{ CCI_REG16(0x50B6), 0x0F0F },
-	{ CCI_REG16(0x50B8), 0x030F },
-	{ CCI_REG16(0x50B8), 0x050F },
 	{ CCI_REG16(0x3D2A), 0x0FFF },
 	{ CCI_REG16(0x3D34), 0x9C40 },
 	{ CCI_REG16(0x3D36), 0xFFFF },
@@ -1276,19 +1257,15 @@ static int ar0822_config_serial_format(struct ar0822 *sensor,
 
 static int ar0822_config_mfr(struct ar0822 *sensor)
 {
-	int ret = 0;
+	int ret;
+
+	ret = cci_multi_reg_write(sensor->regmap, ar0822_regs_mfr_common,
+				  ARRAY_SIZE(ar0822_regs_mfr_common), NULL);
 
 	if (sensor->hdr_mode->val) {
 		dev_dbg(sensor->dev, "Initializing hdr mfr registers\n");
-		ret = cci_multi_reg_write(sensor->regmap, ar0822_regs_mfr_hdr,
-					  ARRAY_SIZE(ar0822_regs_mfr_hdr),
-					  NULL);
-	} else {
-		dev_dbg(sensor->dev, "Initializing common mfr registers\n");
-		ret = cci_multi_reg_write(sensor->regmap,
-					  ar0822_regs_mfr_common,
-					  ARRAY_SIZE(ar0822_regs_mfr_common),
-					  NULL);
+		cci_multi_reg_write(sensor->regmap, ar0822_regs_mfr_hdr,
+				    ARRAY_SIZE(ar0822_regs_mfr_hdr), &ret);
 	}
 
 	return ret;
