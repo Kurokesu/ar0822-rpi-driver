@@ -191,6 +191,12 @@ enum ar0822_bit_depth_id {
 	AR0822_NUM_BIT_DEPTHS,
 };
 
+enum ar0822_mode_id {
+	AR0822_MODE_ID_1080P = 0,
+	AR0822_MODE_ID_4K,
+	AR0822_NUM_MODES,
+};
+
 struct ar0822_format_info {
 	u32 code;
 	u8 bpp;
@@ -205,14 +211,13 @@ struct ar0822_mode {
 	unsigned int width;
 	unsigned int height;
 	struct v4l2_rect crop;
-
-	struct ar0822_timing timing_linear[AR0822_NUM_LANE_MODES]
-					  [AR0822_NUM_BIT_DEPTHS];
-
-	/* Only 12bit companded HDR mode currently supported. */
-	struct ar0822_timing timing_hdr[AR0822_NUM_LANE_MODES];
-
 	struct ar0822_reg_sequence reg_sequence;
+};
+
+struct ar0822_mode_timing {
+	struct ar0822_timing linear[AR0822_NUM_LANE_MODES]
+				   [AR0822_NUM_BIT_DEPTHS];
+	struct ar0822_timing hdr[AR0822_NUM_LANE_MODES];
 };
 
 struct ar0822_pll_config {
@@ -220,8 +225,7 @@ struct ar0822_pll_config {
 	const u64 *freq_extclk;
 	unsigned long pixel_rate;
 
-	unsigned int num_modes;
-	const struct ar0822_mode *modes;
+	const struct ar0822_mode_timing *timings;
 
 	struct ar0822_reg_sequence regs_pll;
 	struct ar0822_reg_sequence regs_mipi[AR0822_NUM_BIT_DEPTHS];
@@ -336,8 +340,8 @@ static const struct cci_reg_sequence ar0822_4k_config[] = {
 	{ AR0822_REG_READ_MODE, 0x0004 }, /* 4 embedded data rows */
 };
 
-static const struct ar0822_mode ar0822_modes_24_480[] = {
-	{
+static const struct ar0822_mode ar0822_modes[AR0822_NUM_MODES] = {
+	[AR0822_MODE_ID_1080P] = {
 		.width = 1920,
 		.height = 1080,
 		.crop = {
@@ -346,7 +350,30 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 			.width = 3840,
 			.height = 2160,
 		},
-		.timing_linear = {
+		.reg_sequence = {
+			.regs = ar0822_1080p_config,
+			.num_regs = ARRAY_SIZE(ar0822_1080p_config),
+		},
+	},
+	[AR0822_MODE_ID_4K] = {
+		.width = 3840,
+		.height = 2160,
+		.crop = {
+			.top = AR0822_PIXEL_ARRAY_TOP,
+			.left = AR0822_PIXEL_ARRAY_LEFT,
+			.width = 3840,
+			.height = 2160,
+		},
+		.reg_sequence = {
+			.regs = ar0822_4k_config,
+			.num_regs = ARRAY_SIZE(ar0822_4k_config),
+		},
+	},
+};
+
+static const struct ar0822_mode_timing ar0822_timings_24_480[AR0822_NUM_MODES] = {
+	[AR0822_MODE_ID_1080P] = {
+		.linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1812,
 				.frame_length_lines_min = 1122,
@@ -368,7 +395,7 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 				.frame_length_lines_def = 1128,
 			},
 		},
-		.timing_hdr = {
+		.hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 2142,
 				.frame_length_lines_min = 1245,
@@ -380,21 +407,9 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 				.frame_length_lines_def = 1246,
 			},
 		},
-		.reg_sequence = {
-			.regs = ar0822_1080p_config,
-			.num_regs = ARRAY_SIZE(ar0822_1080p_config),
-		},
 	},
-	{
-		.width = 3840,
-		.height = 2160,
-		.crop = {
-			.top = AR0822_PIXEL_ARRAY_TOP,
-			.left = AR0822_PIXEL_ARRAY_LEFT,
-			.width = 3840,
-			.height = 2160,
-		},
-		.timing_linear = {
+	[AR0822_MODE_ID_4K] = {
+		.linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 3412,
 				.frame_length_lines_min = 2206,
@@ -416,7 +431,7 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 				.frame_length_lines_def = 2206,
 			},
 		},
-		.timing_hdr = {
+		.hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 4062,
 				.frame_length_lines_min = 2338,
@@ -428,24 +443,12 @@ static const struct ar0822_mode ar0822_modes_24_480[] = {
 				.frame_length_lines_def = 2492,
 			},
 		},
-		.reg_sequence = {
-			.regs = ar0822_4k_config,
-			.num_regs = ARRAY_SIZE(ar0822_4k_config),
-		},
 	},
 };
 
-static const struct ar0822_mode ar0822_modes_24_640[] = {
-	{
-		.width = 1920,
-		.height = 1080,
-		.crop = {
-			.top = AR0822_PIXEL_ARRAY_TOP,
-			.left = AR0822_PIXEL_ARRAY_LEFT,
-			.width = 3840,
-			.height = 2160,
-		},
-		.timing_linear = {
+static const struct ar0822_mode_timing ar0822_timings_24_640[AR0822_NUM_MODES] = {
+	[AR0822_MODE_ID_1080P] = {
+		.linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 1400,
 				.frame_length_lines_min = 1122,
@@ -467,7 +470,7 @@ static const struct ar0822_mode ar0822_modes_24_640[] = {
 				.frame_length_lines_def = 1437,
 			},
 		},
-		.timing_hdr = {
+		.hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 2142,
 				.frame_length_lines_min = 1245,
@@ -479,21 +482,9 @@ static const struct ar0822_mode ar0822_modes_24_640[] = {
 				.frame_length_lines_def = 1246,
 			},
 		},
-		.reg_sequence = {
-			.regs = ar0822_1080p_config,
-			.num_regs = ARRAY_SIZE(ar0822_1080p_config),
-		},
 	},
-	{
-		.width = 3840,
-		.height = 2160,
-		.crop = {
-			.top = AR0822_PIXEL_ARRAY_TOP,
-			.left = AR0822_PIXEL_ARRAY_LEFT,
-			.width = 3840,
-			.height = 2160,
-		},
-		.timing_linear = {
+	[AR0822_MODE_ID_4K] = {
+		.linear = {
 			[AR0822_LANE_MODE_ID_2][AR0822_BIT_DEPTH_ID_10BIT] = {
 				.line_length_pck_min = 2600,
 				.frame_length_lines_min = 2206,
@@ -515,7 +506,7 @@ static const struct ar0822_mode ar0822_modes_24_640[] = {
 				.frame_length_lines_def = 2206,
 			},
 		},
-		.timing_hdr = {
+		.hdr = {
 			[AR0822_LANE_MODE_ID_2] = {
 				.line_length_pck_min = 3088,
 				.frame_length_lines_min = 2338,
@@ -526,10 +517,6 @@ static const struct ar0822_mode ar0822_modes_24_640[] = {
 				.frame_length_lines_min = 2492,
 				.frame_length_lines_def = 2492,
 			},
-		},
-		.reg_sequence = {
-			.regs = ar0822_4k_config,
-			.num_regs = ARRAY_SIZE(ar0822_4k_config),
 		},
 	},
 };
@@ -585,8 +572,7 @@ static const struct ar0822_pll_config ar0822_pll_configs[] = {
 		.freq_extclk =
 			&ar0822_extclk_frequencies[AR0822_EXTCLK_LINK_ID_24_480],
 		.pixel_rate = AR0822_PIXEL_RATE,
-		.modes = ar0822_modes_24_480,
-		.num_modes = ARRAY_SIZE(ar0822_modes_24_480),
+		.timings = ar0822_timings_24_480,
 		.regs_pll = {
 			.regs = ar0822_pll_config_24_480,
 			.num_regs = ARRAY_SIZE(ar0822_pll_config_24_480),
@@ -608,8 +594,7 @@ static const struct ar0822_pll_config ar0822_pll_configs[] = {
 		.freq_extclk =
 			&ar0822_extclk_frequencies[AR0822_EXTCLK_LINK_ID_24_640],
 		.pixel_rate = AR0822_PIXEL_RATE,
-		.modes = ar0822_modes_24_640,
-		.num_modes = ARRAY_SIZE(ar0822_modes_24_640),
+		.timings = ar0822_timings_24_640,
 		.regs_pll = {
 			.regs = ar0822_pll_config_24_640,
 			.num_regs = ARRAY_SIZE(ar0822_pll_config_24_640),
@@ -839,9 +824,8 @@ ar0822_state_get_mode(struct ar0822 *sensor, struct v4l2_subdev_state *state,
 	if (ar0822_get_bit_depth_id(fmt->code, bit_depth_id))
 		*bit_depth_id = AR0822_BIT_DEPTH_ID_10BIT;
 
-	return v4l2_find_nearest_size(sensor->pll_config->modes,
-				      sensor->pll_config->num_modes, width,
-				      height, fmt->width, fmt->height);
+	return v4l2_find_nearest_size(ar0822_modes, ARRAY_SIZE(ar0822_modes),
+				      width, height, fmt->width, fmt->height);
 }
 
 static void ar0822_adjust_exposure_range(struct ar0822 *sensor,
@@ -876,10 +860,13 @@ static const struct ar0822_timing *
 ar0822_get_timing(struct ar0822 *sensor, const struct ar0822_mode *mode,
 		  enum ar0822_bit_depth_id bit_depth_id)
 {
-	if (sensor->hdr_mode->val)
-		return &mode->timing_hdr[sensor->hw_config.lane_mode];
+	const struct ar0822_mode_timing *timings =
+		&sensor->pll_config->timings[mode - ar0822_modes];
 
-	return &mode->timing_linear[sensor->hw_config.lane_mode][bit_depth_id];
+	if (sensor->hdr_mode->val)
+		return &timings->hdr[sensor->hw_config.lane_mode];
+
+	return &timings->linear[sensor->hw_config.lane_mode][bit_depth_id];
 }
 
 static void ar0822_set_framing_limits(struct ar0822 *sensor,
@@ -1035,7 +1022,7 @@ static const struct v4l2_ctrl_ops ar0822_ctrl_ops = {
 
 static int ar0822_init_controls(struct ar0822 *sensor)
 {
-	const struct ar0822_mode *mode = &sensor->pll_config->modes[0];
+	const struct ar0822_mode *mode = &ar0822_modes[AR0822_MODE_ID_1080P];
 	struct v4l2_ctrl_handler *ctrl_hdlr = &sensor->ctrl_handler;
 	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
 	const struct ar0822_timing *timing;
@@ -1047,8 +1034,9 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 	int ret;
 
 	/* Seed limits from default mode, state and controls do not exist yet */
-	timing = &mode->timing_linear[sensor->hw_config.lane_mode]
-				     [AR0822_BIT_DEPTH_ID_10BIT];
+	timing = &sensor->pll_config->timings[AR0822_MODE_ID_1080P]
+			  .linear[sensor->hw_config.lane_mode]
+				 [AR0822_BIT_DEPTH_ID_10BIT];
 
 	ret = v4l2_ctrl_handler_init(ctrl_hdlr, 16);
 	if (ret)
@@ -1434,15 +1422,15 @@ static int ar0822_enum_frame_size(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (fse->pad == IMAGE_PAD) {
-		if (fse->index >= sensor->pll_config->num_modes)
+		if (fse->index >= ARRAY_SIZE(ar0822_modes))
 			return -EINVAL;
 
 		if (fse->code != ar0822_get_format_code(sensor, fse->code))
 			return -EINVAL;
 
-		fse->min_width = sensor->pll_config->modes[fse->index].width;
+		fse->min_width = ar0822_modes[fse->index].width;
 		fse->max_width = fse->min_width;
-		fse->min_height = sensor->pll_config->modes[fse->index].height;
+		fse->min_height = ar0822_modes[fse->index].height;
 		fse->max_height = fse->min_height;
 	} else {
 		if (fse->code != MEDIA_BUS_FMT_SENSOR_DATA || fse->index > 0)
@@ -1504,9 +1492,8 @@ static int ar0822_set_pad_format(struct v4l2_subdev *sd,
 
 	fmt->format.code = ar0822_get_format_code(sensor, fmt->format.code);
 
-	mode = v4l2_find_nearest_size(sensor->pll_config->modes,
-				      sensor->pll_config->num_modes, width,
-				      height, fmt->format.width,
+	mode = v4l2_find_nearest_size(ar0822_modes, ARRAY_SIZE(ar0822_modes),
+				      width, height, fmt->format.width,
 				      fmt->format.height);
 	ar0822_update_image_pad_format(mode, fmt);
 
@@ -1559,14 +1546,13 @@ static int ar0822_get_selection(struct v4l2_subdev *sd,
 static int ar0822_init_state(struct v4l2_subdev *sd,
 			     struct v4l2_subdev_state *state)
 {
-	struct ar0822 *sensor = to_ar0822(sd);
 	struct v4l2_subdev_format fmt = {
 		.which = V4L2_SUBDEV_FORMAT_TRY,
 		.pad = IMAGE_PAD,
 		.format = {
 			.code = ar0822_formats[0].code,
-			.width = sensor->pll_config->modes[0].width,
-			.height = sensor->pll_config->modes[0].height,
+			.width = ar0822_modes[AR0822_MODE_ID_1080P].width,
+			.height = ar0822_modes[AR0822_MODE_ID_1080P].height,
 		},
 	};
 #ifdef AR0822_EMBEDDED_DATA_ENABLED
