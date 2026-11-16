@@ -35,8 +35,9 @@
 #define AR0822_VBLANK_STEP 1
 #define AR0822_FLL_MAX 0xFFFF /* Maximum frame length lines register value */
 
-#define AR0822_RESET_DELAY_US_MIN 7000
-#define AR0822_RESET_DELAY_US_MAX (AR0822_RESET_DELAY_US_MIN + 1000)
+#define AR0822_AUTOSUSPEND_DELAY_MS 1000
+#define AR0822_RESET_DELAY_US 7000
+#define AR0822_RESET_DELAY_RANGE_US 1000
 
 #define AR0822_PIXEL_NATIVE_WIDTH 3848
 #define AR0822_PIXEL_NATIVE_HEIGHT 2168
@@ -67,6 +68,8 @@
 
 #define AR0822_IMAGE_ORIENTATION_HFLIP BIT(0)
 #define AR0822_IMAGE_ORIENTATION_VFLIP BIT(1)
+
+#define AR0822_SERIAL_FORMAT_TYPE_MIPI 0x0200
 
 #define AR0822_DATA_FORMAT_RAW_LIN 12 /* ADC raw data size in bits (linear) */
 #define AR0822_DATA_FORMAT_RAW_HDR 16 /* ADC raw data size in bits (HDR) */
@@ -1211,7 +1214,9 @@ static int ar0822_config_serial_format(struct ar0822 *sensor,
 						  AR0822_DATA_FORMAT_RAW_LIN;
 
 	ret = cci_write(sensor->regmap, AR0822_REG_SERIAL_FORMAT,
-			(0x0200 | sensor->hw_config.num_data_lanes), NULL);
+			(AR0822_SERIAL_FORMAT_TYPE_MIPI |
+			 sensor->hw_config.num_data_lanes),
+			NULL);
 	if (ret < 0) {
 		dev_err(sensor->dev, "failed to set serial format: %d\n", ret);
 		return ret;
@@ -1269,7 +1274,8 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 		goto err_rpm_put;
 	}
 
-	usleep_range(AR0822_RESET_DELAY_US_MIN, AR0822_RESET_DELAY_US_MAX);
+	usleep_range(AR0822_RESET_DELAY_US,
+		     AR0822_RESET_DELAY_US + AR0822_RESET_DELAY_RANGE_US);
 
 	/* Configure PLL and MIPI timings */
 	ret = ar0822_config_pll(sensor, bit_depth_id);
@@ -1654,7 +1660,8 @@ static int ar0822_power_on(struct ar0822 *sensor)
 
 	gpiod_set_value_cansleep(hw_config->gpio_reset, 1);
 
-	usleep_range(AR0822_RESET_DELAY_US_MIN, AR0822_RESET_DELAY_US_MAX);
+	usleep_range(AR0822_RESET_DELAY_US,
+		     AR0822_RESET_DELAY_US + AR0822_RESET_DELAY_RANGE_US);
 
 	return 0;
 
@@ -1853,7 +1860,8 @@ static int ar0822_probe(struct i2c_client *client)
 	pm_runtime_set_active(sensor->dev);
 	pm_runtime_get_noresume(sensor->dev);
 	pm_runtime_enable(sensor->dev);
-	pm_runtime_set_autosuspend_delay(sensor->dev, 1000);
+	pm_runtime_set_autosuspend_delay(sensor->dev,
+					 AR0822_AUTOSUSPEND_DELAY_MS);
 	pm_runtime_use_autosuspend(sensor->dev);
 
 	ret = ar0822_identify_model(sensor);
