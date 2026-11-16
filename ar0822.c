@@ -904,7 +904,6 @@ static int ar0822_set_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ar0822 *sensor =
 		container_of(ctrl->handler, struct ar0822, ctrl_handler);
-	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
 	const struct ar0822_mode *mode;
 	enum ar0822_bit_depth_id bit_depth_id;
 	struct v4l2_subdev_state *state;
@@ -944,7 +943,7 @@ static int ar0822_set_ctrl(struct v4l2_ctrl *ctrl)
 	 * Applying V4L2 control value only happens
 	 * when power is up for streaming
 	 */
-	if (pm_runtime_get_if_in_use(&client->dev) == 0)
+	if (pm_runtime_get_if_in_use(sensor->dev) == 0)
 		return 0;
 
 	switch (ctrl->id) {
@@ -1019,8 +1018,8 @@ static int ar0822_set_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	}
 
-	pm_runtime_mark_last_busy(&client->dev);
-	pm_runtime_put_autosuspend(&client->dev);
+	pm_runtime_mark_last_busy(sensor->dev);
+	pm_runtime_put_autosuspend(sensor->dev);
 
 	return ret;
 }
@@ -1033,7 +1032,6 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 {
 	const struct ar0822_mode *mode = &ar0822_modes[AR0822_MODE_ID_1080P];
 	struct v4l2_ctrl_handler *ctrl_hdlr = &sensor->ctrl_handler;
-	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
 	const struct ar0822_timing *timing;
 	struct v4l2_fwnode_device_properties props;
 	struct v4l2_ctrl *ctrl;
@@ -1133,11 +1131,11 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 
 	if (ctrl_hdlr->error) {
 		ret = ctrl_hdlr->error;
-		dev_err(&client->dev, "failed to init controls %d\n", ret);
+		dev_err(sensor->dev, "failed to init controls %d\n", ret);
 		goto error;
 	}
 
-	ret = v4l2_fwnode_device_parse(&client->dev, &props);
+	ret = v4l2_fwnode_device_parse(sensor->dev, &props);
 	if (ret)
 		goto error;
 
@@ -1253,7 +1251,6 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 				 u64 streams_mask)
 {
 	struct ar0822 *sensor = to_ar0822(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
 	const struct ar0822_mode *mode;
 	enum ar0822_bit_depth_id bit_depth_id;
 	int ret;
@@ -1264,7 +1261,7 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 
 	mode = ar0822_state_get_mode(sensor, state, &bit_depth_id);
 
-	ret = pm_runtime_resume_and_get(&client->dev);
+	ret = pm_runtime_resume_and_get(sensor->dev);
 	if (ret < 0)
 		return ret;
 
@@ -1347,8 +1344,8 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 	return 0;
 
 err_rpm_put:
-	pm_runtime_mark_last_busy(&client->dev);
-	pm_runtime_put_autosuspend(&client->dev);
+	pm_runtime_mark_last_busy(sensor->dev);
+	pm_runtime_put_autosuspend(sensor->dev);
 
 	return ret;
 }
@@ -1358,7 +1355,6 @@ static int ar0822_disable_streams(struct v4l2_subdev *sd,
 				  u64 streams_mask)
 {
 	struct ar0822 *sensor = to_ar0822(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
 	int ret;
 
 	/* Stop hardware only when the last enabled pad goes */
@@ -1367,14 +1363,14 @@ static int ar0822_disable_streams(struct v4l2_subdev *sd,
 
 	ret = ar0822_stream_off(sensor);
 	if (ret)
-		dev_err(&client->dev, "%s failed to set stream\n", __func__);
+		dev_err(sensor->dev, "%s failed to set stream\n", __func__);
 
 	__v4l2_ctrl_grab(sensor->vflip, false);
 	__v4l2_ctrl_grab(sensor->hflip, false);
 	__v4l2_ctrl_grab(sensor->hdr_mode, false);
 
-	pm_runtime_mark_last_busy(&client->dev);
-	pm_runtime_put_autosuspend(&client->dev);
+	pm_runtime_mark_last_busy(sensor->dev);
+	pm_runtime_put_autosuspend(sensor->dev);
 
 	return ret;
 }
