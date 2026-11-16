@@ -73,7 +73,7 @@
 
 				vana-supply = <&cam1_reg>;	/* 2.8v */
 				vdig-supply = <&cam_dummy_reg>;	/* 1.8v */
-				vddl-supply = <&cam_dummy_reg>;	/* 1.2v */
+				vddl-supply = <&cam_dummy_reg>;	/* 1.05v */
 
 				rotation = <0>;
 				orientation = <2>;
