@@ -7,7 +7,7 @@
 [![RPi OS Bookworm | Trixie](https://img.shields.io/badge/RPi_OS-Bookworm_%7C_Trixie-blue?logo=raspberrypi)](https://www.raspberrypi.com/software/operating-systems/)
 [![Kernel 6.12+](https://img.shields.io/badge/kernel-6.12%2B-blue?logo=raspberrypi)](https://github.com/raspberrypi/linux/tree/rpi-6.12.y)
 
-Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
+Raspberry Pi kernel driver for onsemi AR0822, an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
 
 - 2-lane and 4-lane MIPI CSI-2 (up to 1280 Mbps/lane)
 - 10-bit and 12-bit RAW output

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Driver for the OnSemi AR0822 CMOS Image Sensor.
+ * Driver for the onsemi AR0822 CMOS Image Sensor.
  *
  * Copyright (C) 2025-2026 UAB Kurokesu
  */
@@ -1953,6 +1953,6 @@ static struct i2c_driver ar0822_driver = {
 
 module_i2c_driver(ar0822_driver);
 
-MODULE_DESCRIPTION("OnSemi AR0822 image sensor driver");
+MODULE_DESCRIPTION("onsemi AR0822 image sensor driver");
 MODULE_AUTHOR("Danius Kalvaitis <danius@kurokesu.com>");
 MODULE_LICENSE("GPL");
