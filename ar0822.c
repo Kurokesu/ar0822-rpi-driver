@@ -238,8 +238,8 @@ struct ar0822_pll_config {
 
 static const char *const ar0822_supply_names[] = {
 	"vana", /* Analog (2.8V) supply */
-	"vdig", /* Digital Core (1.8V) supply */
-	"vddl", /* IF (1.2V) supply */
+	"vdig", /* I/O (1.8V) supply */
+	"vddl", /* Digital core and PHY (1.05V) supply */
 };
 
 #define AR0822_NUM_SUPPLIES ARRAY_SIZE(ar0822_supply_names)
@@ -888,7 +888,11 @@ static void ar0822_set_framing_limits(struct ar0822 *sensor,
 	/* Setting this will adjust the exposure limits as well */
 	__v4l2_ctrl_s_ctrl(sensor->vblank, vblank_def);
 
-	/* Virtual, negative, keeps width + hblank at true line length */
+	/*
+	 * Sensor reads several pixels per clock, so line length can be below
+	 * width. V4L2 HBLANK control may go negative, only width + hblank
+	 * reaches the sensor.
+	 */
 	hblank_min = timing->line_length_pck_min - mode->width;
 	hblank_max = AR0822_LINE_LENGTH_PCK_MAX - mode->width;
 	if (sensor->hdr_mode->val)
@@ -1789,10 +1793,7 @@ static int ar0822_parse_hw_config(struct ar0822 *sensor)
 		goto done_endpoint_free;
 	}
 
-	/*
-	 * Check if there exists a sensor mode defined for current EXTCLK,
-	 * number of lanes and given lane rate.
-	 */
+	/* Find PLL config for EXTCLK and link frequency */
 	extclk_frequency = clk_get_rate(hw_config->extclk);
 
 	for (i = 0; i < ARRAY_SIZE(ar0822_pll_configs); i++) {
