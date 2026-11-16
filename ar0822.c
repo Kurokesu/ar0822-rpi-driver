@@ -1131,7 +1131,7 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 
 	if (ctrl_hdlr->error) {
 		ret = ctrl_hdlr->error;
-		dev_err(sensor->dev, "failed to init controls %d\n", ret);
+		dev_err(sensor->dev, "failed to init controls: %d\n", ret);
 		goto error;
 	}
 
@@ -1184,7 +1184,7 @@ static int ar0822_config_pll(struct ar0822 *sensor,
 	ret = ar0822_reg_seq_write(sensor->regmap,
 				   &sensor->pll_config->regs_pll);
 	if (ret < 0) {
-		dev_err(sensor->dev, "Failed to write PLL config: %d\n", ret);
+		dev_err(sensor->dev, "failed to write PLL config: %d\n", ret);
 		return ret;
 	}
 
@@ -1192,8 +1192,7 @@ static int ar0822_config_pll(struct ar0822 *sensor,
 	ret = cci_write(sensor->regmap, AR0822_REG_OP_WORD_CLK_DIV,
 			ar0822_formats[bit_depth_id].bpp / 2, NULL);
 	if (ret < 0) {
-		dev_err(sensor->dev,
-			"Failed to write AR0822_REG_OP_WORD_CLK_DIV: %d\n",
+		dev_err(sensor->dev, "failed to write OP_WORD_CLK_DIV: %d\n",
 			ret);
 		return ret;
 	}
@@ -1201,7 +1200,7 @@ static int ar0822_config_pll(struct ar0822 *sensor,
 	/* Configure MIPI timing */
 	ret = ar0822_reg_seq_write(sensor->regmap, regs_mipi);
 	if (ret < 0) {
-		dev_err(sensor->dev, "Failed to write MIPI timing config: %d\n",
+		dev_err(sensor->dev, "failed to write MIPI timing config: %d\n",
 			ret);
 		return ret;
 	}
@@ -1219,7 +1218,7 @@ static int ar0822_config_serial_format(struct ar0822 *sensor,
 	ret = cci_write(sensor->regmap, AR0822_REG_SERIAL_FORMAT,
 			(0x0200 | sensor->hw_config.num_data_lanes), NULL);
 	if (ret < 0) {
-		dev_err(sensor->dev, "Failed to set serial format: %d\n", ret);
+		dev_err(sensor->dev, "failed to set serial format: %d\n", ret);
 		return ret;
 	}
 
@@ -1271,7 +1270,7 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 	ret = cci_write(sensor->regmap, AR0822_REG_RESET,
 			AR0822_RESET_SOFT_RESET, &ret);
 	if (ret < 0) {
-		dev_err(sensor->dev, "Failed to soft reset: %d\n", ret);
+		dev_err(sensor->dev, "failed to soft reset: %d\n", ret);
 		goto err_rpm_put;
 	}
 
@@ -1286,28 +1285,28 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 	ret = cci_multi_reg_write(sensor->regmap, ar0822_regs_common,
 				  ARRAY_SIZE(ar0822_regs_common), NULL);
 	if (ret < 0) {
-		dev_err(sensor->dev, "Failed to write common regs: %d\n", ret);
+		dev_err(sensor->dev, "failed to write common regs: %d\n", ret);
 		goto err_rpm_put;
 	}
 
 	/* Configure manufacturer recommended registers */
 	ret = ar0822_config_mfr(sensor);
 	if (ret < 0) {
-		dev_err(sensor->dev, "Failed to write mfr regs: %d\n", ret);
+		dev_err(sensor->dev, "failed to write mfr regs: %d\n", ret);
 		goto err_rpm_put;
 	}
 
 	/* Configure image mode */
 	ret = ar0822_reg_seq_write(sensor->regmap, &mode->reg_sequence);
 	if (ret < 0) {
-		dev_err(sensor->dev, "Failed to configure mode: %d\n", ret);
+		dev_err(sensor->dev, "failed to configure mode: %d\n", ret);
 		goto err_rpm_put;
 	}
 
 	/* Configure serial format */
 	ret = ar0822_config_serial_format(sensor, bit_depth_id);
 	if (ret) {
-		dev_err(sensor->dev, "Failed to configure serial format: %d\n",
+		dev_err(sensor->dev, "failed to configure serial format: %d\n",
 			ret);
 		goto err_rpm_put;
 	}
@@ -1319,8 +1318,8 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 					  ARRAY_SIZE(ar0822_regs_hdr), NULL);
 
 		if (ret) {
-			dev_err(sensor->dev, "Failed to config hdr mode: %d\n",
-				ret);
+			dev_err(sensor->dev,
+				"failed to configure hdr mode: %d\n", ret);
 			goto err_rpm_put;
 		}
 	}
@@ -1328,7 +1327,7 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 	/* Apply customized values from user */
 	ret = __v4l2_ctrl_handler_setup(sensor->sd.ctrl_handler);
 	if (ret) {
-		dev_err(sensor->dev, "Failed to setup controls: %d\n", ret);
+		dev_err(sensor->dev, "failed to setup controls: %d\n", ret);
 		goto err_rpm_put;
 	}
 
@@ -1363,7 +1362,7 @@ static int ar0822_disable_streams(struct v4l2_subdev *sd,
 
 	ret = ar0822_stream_off(sensor);
 	if (ret)
-		dev_err(sensor->dev, "%s failed to set stream\n", __func__);
+		dev_err(sensor->dev, "failed to stop streaming: %d\n", ret);
 
 	__v4l2_ctrl_grab(sensor->vflip, false);
 	__v4l2_ctrl_grab(sensor->hflip, false);
@@ -1691,12 +1690,14 @@ static int ar0822_identify_model(struct ar0822 *sensor)
 	ret = cci_read(sensor->regmap, AR0822_REG_CHIP_VERSION, &reg_val, NULL);
 	if (ret < 0) {
 		dev_err_probe(sensor->dev, ret,
-			      "Failed to read chip version\n");
+			      "failed to read chip version\n");
 		return ret;
 	}
 
 	if (reg_val != AR0822_MODEL_ID) {
-		dev_err(sensor->dev, "Invalid model id 0x%x\n", (u16)reg_val);
+		dev_err(sensor->dev,
+			"invalid model id 0x%04x, expected 0x%04x\n",
+			(u16)reg_val, AR0822_MODEL_ID);
 		return -ENODEV;
 	}
 
@@ -1704,13 +1705,14 @@ static int ar0822_identify_model(struct ar0822 *sensor)
 		       NULL);
 	if (ret < 0) {
 		dev_err_probe(sensor->dev, ret,
-			      "Failed to read revision number\n");
+			      "failed to read revision number\n");
 		return ret;
 	}
 
 	if (reg_val < AR0822_REVISION_MIN)
-		dev_warn(sensor->dev, "Driver tested with rev 0x%x and later\n",
-			 AR0822_REVISION_MIN);
+		dev_warn(sensor->dev,
+			 "untested revision 0x%x, expected 0x%x or later\n",
+			 (u16)reg_val, AR0822_REVISION_MIN);
 
 	dev_info(sensor->dev, "Detected AR0822 image sensor, rev 0x%x\n",
 		 (u16)reg_val);
@@ -1765,7 +1767,7 @@ static int ar0822_parse_hw_config(struct ar0822 *sensor)
 	ret = v4l2_fwnode_endpoint_alloc_parse(endpoint, &ep_cfg);
 	fwnode_handle_put(endpoint);
 	if (ret) {
-		dev_err(sensor->dev, "failed to parse endpoint\n");
+		dev_err(sensor->dev, "failed to parse endpoint: %d\n", ret);
 		return ret;
 	}
 
@@ -1787,7 +1789,7 @@ static int ar0822_parse_hw_config(struct ar0822 *sensor)
 
 	if (!ep_cfg.nr_of_link_frequencies) {
 		ret = dev_err_probe(sensor->dev, -EINVAL,
-				    "no link frequencies defined");
+				    "no link frequencies defined\n");
 		goto done_endpoint_free;
 	}
 
