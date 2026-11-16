@@ -11,7 +11,7 @@ Raspberry Pi kernel driver for Onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 
 - 2-lane and 4-lane MIPI CSI-2 (up to 1280 Mbps/lane)
 - 10-bit and 12-bit RAW output
-- 3840×2160 @ 45 fps (full resolution)
+- 3840×2160 @ 46 fps (full resolution)
 - 1920×1080 @ 178 fps (2×2 binning)
 
 ![Kurokesu camera modules connected to a Raspberry Pi 5.](https://raw.githubusercontent.com/Kurokesu/ar0822-rpi-driver/main/docs/kurokesu-on-pi.jpg)
@@ -97,7 +97,7 @@ Available cameras
 -----------------
 0 : ar0822 [3840x2160 12-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0822@10)
     Modes: 'SGRBG10_CSI2P' : 1920x1080 [178.25 fps - (0, 0)/3840x2160 crop]
-                             3840x2160 [45.33 fps - (0, 0)/3840x2160 crop]
+                             3840x2160 [46.04 fps - (0, 0)/3840x2160 crop]
            'SGRBG12_CSI2P' : 1920x1080 [153.68 fps - (0, 0)/3840x2160 crop]
                              3840x2160 [44.01 fps - (0, 0)/3840x2160 crop]
 ```
@@ -182,11 +182,14 @@ dtoverlay=ar0822,link-frequency=480000000
 | 480 MHz | 960 Mbps | 4 | 10 | 3840 | 2160 | 40.0 fps |
 | 480 MHz | 960 Mbps | 4 | 12 | 3840 | 2160 | 33.9 fps |
 | 480 MHz | 960 Mbps | 4 | 12 (eHDR) | 3840 | 2160 | 30.0 fps |
-| 640 MHz | 1280 Mbps | 4 | 10 | 3840 | 2160 | 45.3 fps |
+| 640 MHz | 1280 Mbps | 4 | 10 | 3840 | 2160 | 51.8 fps* |
 | 640 MHz | 1280 Mbps | 4 | 12 | 3840 | 2160 | 44.0 fps |
 | 640 MHz | 1280 Mbps | 4 | 12 (eHDR) | 3840 | 2160 | 30.0 fps |
 
-*4K 10-bit on 4 lanes is limited to 45.3 fps by RP1, which processes up to 390 Mpix/s on Pi 5.*
+*\* 46.0 fps on Pi 5, which processes up to 390 Mpix/s.*
+
+> [!NOTE]
+> Above 60 fps, see [Capture high framerate video](https://www.raspberrypi.com/documentation/accessories/camera-software.html#capture-high-framerate-video). On Pi 4, 4K is limited to 30 fps and 1080p needs `--denoise cdn_off` above 60 fps.
 
 > [!TIP]
 > Options can be combined. Example (cam0, 4-lane):
