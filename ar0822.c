@@ -30,6 +30,9 @@
 #define AR0822_EMBEDDED_LINE_WIDTH 5760
 #define AR0822_NUM_EMBEDDED_LINES 4
 
+#define AR0822_HBLANK_STEP 2
+#define AR0822_LINE_LENGTH_PCK_MAX 0xFFFE
+
 #define AR0822_VBLANK_STEP 1
 #define AR0822_FLL_MAX 0xFFFF /* Maximum frame length lines register value */
 
@@ -875,7 +878,7 @@ static void ar0822_set_framing_limits(struct ar0822 *sensor,
 {
 	const struct ar0822_timing *timing =
 		ar0822_get_timing(sensor, mode, bit_depth_id);
-	int hblank, vblank_def, vblank_min;
+	int hblank_max, hblank_min, vblank_def, vblank_min;
 
 	/* Update limits and set FPS to default */
 	vblank_min = timing->frame_length_lines_min - mode->height;
@@ -888,8 +891,13 @@ static void ar0822_set_framing_limits(struct ar0822 *sensor,
 	__v4l2_ctrl_s_ctrl(sensor->vblank, vblank_def);
 
 	/* Virtual, negative, keeps width + hblank at true line length */
-	hblank = timing->line_length_pck_min - mode->width;
-	__v4l2_ctrl_modify_range(sensor->hblank, hblank, hblank, 1, hblank);
+	hblank_min = timing->line_length_pck_min - mode->width;
+	hblank_max = AR0822_LINE_LENGTH_PCK_MAX - mode->width;
+	if (sensor->hdr_mode->val)
+		hblank_max = hblank_min;
+	__v4l2_ctrl_modify_range(sensor->hblank, hblank_min, hblank_max,
+				 AR0822_HBLANK_STEP, hblank_min);
+	__v4l2_ctrl_s_ctrl(sensor->hblank, hblank_min);
 }
 
 static int ar0822_set_ctrl(struct v4l2_ctrl *ctrl)
@@ -999,7 +1007,8 @@ static int ar0822_set_ctrl(struct v4l2_ctrl *ctrl)
 				ctrl->val, NULL);
 		break;
 	case V4L2_CID_HBLANK:
-		/* Read only, line length is set with mode registers. */
+		ret = cci_write(sensor->regmap, AR0822_REG_LINE_LENGTH_PCK,
+				mode->width + ctrl->val, NULL);
 		break;
 	case V4L2_CID_WIDE_DYNAMIC_RANGE:
 		/* Already handled above. */
@@ -1030,7 +1039,7 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 	struct v4l2_ctrl *ctrl;
 	u8 link_freq_id;
 	u32 exposure_max;
-	int hblank, vblank_def, vblank_min;
+	int hblank_max, hblank_min, vblank_def, vblank_min;
 	int ret;
 
 	/* Seed limits from default mode, state and controls do not exist yet */
@@ -1059,13 +1068,13 @@ static int ar0822_init_controls(struct ar0822 *sensor)
 	if (ctrl)
 		ctrl->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
-	/* Horizontal blanking (read only) */
-	hblank = timing->line_length_pck_min - mode->width;
+	/* Horizontal blanking control */
+	hblank_min = timing->line_length_pck_min - mode->width;
+	hblank_max = AR0822_LINE_LENGTH_PCK_MAX - mode->width;
 	sensor->hblank = v4l2_ctrl_new_std(ctrl_hdlr, &ar0822_ctrl_ops,
-					   V4L2_CID_HBLANK, hblank, hblank, 1,
-					   hblank);
-	if (sensor->hblank)
-		sensor->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+					   V4L2_CID_HBLANK, hblank_min,
+					   hblank_max, AR0822_HBLANK_STEP,
+					   hblank_min);
 
 	/* Vertical blanking control */
 	vblank_min = timing->frame_length_lines_min - mode->height;
@@ -1246,7 +1255,6 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 	struct ar0822 *sensor = to_ar0822(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
 	const struct ar0822_mode *mode;
-	const struct ar0822_timing *timing;
 	enum ar0822_bit_depth_id bit_depth_id;
 	int ret;
 
@@ -1255,7 +1263,6 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 		return 0;
 
 	mode = ar0822_state_get_mode(sensor, state, &bit_depth_id);
-	timing = ar0822_get_timing(sensor, mode, bit_depth_id);
 
 	ret = pm_runtime_resume_and_get(&client->dev);
 	if (ret < 0)
@@ -1319,14 +1326,6 @@ static int ar0822_enable_streams(struct v4l2_subdev *sd,
 				ret);
 			goto err_rpm_put;
 		}
-	}
-
-	/* Set fixed line length pck for current mode */
-	ret = cci_write(sensor->regmap, AR0822_REG_LINE_LENGTH_PCK,
-			timing->line_length_pck_min, NULL);
-	if (ret) {
-		dev_err(sensor->dev, "Failed to set line length: %d\n", ret);
-		goto err_rpm_put;
 	}
 
 	/* Apply customized values from user */
