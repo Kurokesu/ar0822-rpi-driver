@@ -499,7 +499,7 @@ static const struct ar0822_mode_timing ar0822_timings_24_640[AR0822_NUM_MODES] =
 				.frame_length_lines_def = 2206,
 			},
 			[AR0822_LANE_MODE_ID_4][AR0822_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck_min = 1600,
+				.line_length_pck_min = 1400,
 				.frame_length_lines_min = 2206,
 				.frame_length_lines_def = 2206,
 			},
