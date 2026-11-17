@@ -9,6 +9,7 @@
 
 Raspberry Pi kernel driver for onsemi AR0822, an 8 MP rolling shutter 1/1.8" back side illuminated CMOS sensor.
 
+- [eHDR](#ehdr) on-sensor HDR, 3840×2160 @ 30 fps on Raspberry Pi 5
 - 2-lane and 4-lane MIPI CSI-2 (up to 1280 Mbps/lane)
 - 10-bit and 12-bit RAW output
 - 3840×2160 @ 46 fps (full resolution)
@@ -17,11 +18,6 @@ Raspberry Pi kernel driver for onsemi AR0822, an 8 MP rolling shutter 1/1.8" bac
 ![Kurokesu camera modules connected to a Raspberry Pi 5.](https://raw.githubusercontent.com/Kurokesu/ar0822-rpi-driver/main/docs/kurokesu-on-pi.jpg)
 
 *AR0822 camera modules are available at [kurokesu.com](https://www.kurokesu.com/item/822C-CSI)*
-
-> [!NOTE]
-> This driver supports an experimental eHDR mode, modeled after IMX708
-> implementation, by exposing the standard `V4L2_CID_WIDE_DYNAMIC_RANGE` control.
-> Read more in [eHDR (experimental)](#ehdr-experimental).
 
 ## Install
 
@@ -197,20 +193,35 @@ dtoverlay=ar0822,link-frequency=480000000
 > dtoverlay=ar0822,cam0,4lane
 > ```
 
-## eHDR (experimental)
+## eHDR
 
-AR0822 features an on-sensor HDR mode that expands dynamic range up to 96 dB by combining 2 exposures within sensor using MEC algorithm. To reduce bandwidth requirements, linearized 16-bit HDR signal is companded to a 12-bit output.
+eHDR is AR0822's on-sensor high dynamic range (HDR) mode. Sensor captures 2 exposures per frame and merges them into a 16-bit linear signal with up to 96 dB dynamic range. Merged output is companded to 12-bit. libcamera expands it back to linear, so auto exposure and white balance behave as in normal modes.
+
+Sensor runs eHDR at 1920×1080 up to 60 fps and 3840×2160 up to 30 fps.
+
+Same scene in normal mode (left) and eHDR (right), auto exposure in both:
+
+![AR0822 in normal mode loses the car in shadow, eHDR keeps detail in both the shadow and the lit car.](https://raw.githubusercontent.com/Kurokesu/ar0822-rpi-driver/main/docs/ehdr-comparison.jpg)
 
 > [!IMPORTANT]
-> libcamera pipeline is designed for linear image data from sensor. Kurokesu's libcamera fork decompands eHDR data on Pi 5. Pi 4 ISP has no decompanding, so colors there are approximate.
+> eHDR requires Raspberry Pi 5. Raspberry Pi 4 ISP has no decompand block.
 
-eHDR mode is enabled by appending `--hdr` to `rpicam` commands.
+eHDR is enabled by appending `--hdr` to `rpicam` commands:
+
+```bash
+rpicam-still --hdr -o hdr.jpg
+rpicam-vid --hdr -t 10000 --width 1920 --height 1080 -o hdr.h264
+```
+
+*`--hdr` also enables ISP tonemapping to lift shadows and hold highlights.*
 
 ### List eHDR modes
 
 ```bash
 rpicam-hello --list-cameras --hdr
 ```
+
+Expected output (varies by link frequency and lane configuration):
 
 ```
 Available cameras
@@ -219,6 +230,32 @@ Available cameras
     Modes: 'SGRBG12_CSI2P' : 1920x1080 [60.01 fps - (0, 0)/3840x2160 crop]
                              3840x2160 [30.00 fps - (0, 0)/3840x2160 crop]
 ```
+
+### Picamera2
+
+Enable eHDR on sensor before opening camera:
+
+```bash
+v4l2-ctl -d /dev/v4l-subdev2 -c wide_dynamic_range=1
+```
+
+*Subdev number varies. Find it with `grep ar0822 /sys/class/video4linux/v4l-subdev*/name`.*
+
+Request tonemapping in configuration:
+
+```python
+from libcamera import controls
+from picamera2 import Picamera2
+
+picam2 = Picamera2()
+config = picam2.create_still_configuration(
+    controls={"HdrMode": controls.HdrModeEnum.SingleExposure},
+)
+picam2.configure(config)
+picam2.start_and_capture_file("hdr.jpg")
+```
+
+*Without `HdrMode`, auto exposure gain in eHDR stops at 8x.*
 
 ## Build from source
 
