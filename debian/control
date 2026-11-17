@@ -11,6 +11,7 @@ Package: ar0822-rpi-dkms
 Architecture: all
 Depends: ${misc:Depends}, dkms, device-tree-compiler
 Recommends: linux-headers-rpi-2712 | linux-headers-rpi-v8
+Breaks: libcamera-ipa (<< 1:0.8.0+rpt20261104+krks2-1~)
 Description: onsemi AR0822 camera driver for Raspberry Pi (DKMS)
  Kernel module and device tree overlay for onsemi AR0822, an 8 MP
  rolling shutter CMOS sensor, on Raspberry Pi with kernel 6.12 or newer.
