@@ -1,3 +1,26 @@
+ar0822-rpi-dkms (0.2.0-1) unstable; urgency=medium
+
+  * eHDR, no longer experimental:
+    - Merge 2 exposures into 16-bit data, companded to 12-bit, which
+      libcamera 0.8.0+rpt20261104+krks2 expands back to linear on Pi 5.
+    - Reach 1080p 60 fps and 4K 30 fps, with longer exposure at 4K.
+    - Apply analogue gain to both exposures.
+  * Replace 960 MHz link frequency with 640 MHz, now default. 4K reaches
+    46 fps and 1080p 178 fps on 4 lanes. 480 MHz stays available
+    through link-frequency param.
+  * Default 4-lane 1080p to 120 fps.
+  * Make horizontal blanking writable in linear modes.
+  * Limit analogue gain control to sensor analogue range. Digital gain
+    is left to ISP.
+  * Set overlay orientation to external.
+  * Quiet routine logs to debug level.
+  * Rename setup.sh to install.sh, setup.sh still runs it. Add
+    uninstall.sh to remove a source install.
+  * Break libcamera-ipa older than krks2, which cannot expand eHDR
+    data.
+
+ -- Danius Kalvaitis <danius@kurokesu.com>  Tue, 17 Nov 2026 10:12:37 +0200
+
 ar0822-rpi-dkms (0.1.2-1) unstable; urgency=medium
 
   * Soft reset sensor to register defaults at stream start. Supports
